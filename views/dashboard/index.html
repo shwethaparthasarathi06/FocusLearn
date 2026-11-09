@@ -1,0 +1,77 @@
+<%- include('../partials/header.html') %>
+<%- include('../partials/sidebar.html') %>
+
+<%
+    const user = (typeof currentUser !== 'undefined' && currentUser) ? currentUser : null;
+    const greet = (typeof greeting !== 'undefined' && greeting) ? greeting : 'Good Evening';
+    
+    const now = new Date();
+    const defaultDateStr = now.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+    const defaultDayName = now.toLocaleDateString('en-US', { weekday: 'long' });
+    const dateDisplay = (typeof currentDate !== 'undefined' && currentDate && currentDate.dateStr) ? currentDate.dateStr : defaultDateStr;
+    const dayDisplay = (typeof currentDate !== 'undefined' && currentDate && currentDate.dayName) ? currentDate.dayName : defaultDayName;
+%>
+
+<div class="main-content">
+    <%- include('../partials/flash.html') %>
+
+    <% if (locals.isAuthenticated && user) { %>
+        <!-- Greeting Banner on top when logged in or registered (Image 3) -->
+        <div class="smart-dash-header mb-4">
+            <div class="smart-greeting-box">
+                <h1 class="smart-greeting-title">
+                    <%= greet %>, <%= user.name %>! 👋
+                </h1>
+                <p class="smart-greeting-sub">Keep going! You are doing great!</p>
+            </div>
+            <div class="smart-header-right">
+                <div class="smart-date-box">
+                    <div class="smart-date-icon">
+                        <i class="bi bi-calendar-event"></i>
+                    </div>
+                    <div class="smart-date-info">
+                        <div class="smart-date-val"><%= dateDisplay %></div>
+                        <div class="smart-date-day"><%= dayDisplay %></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    <% } %>
+
+    <!-- Student Workspace Dashboard (Image 2) -->
+    <h2 class="courses-title">STUDENT WORKSPACE DASHBOARD</h2>
+
+    <div class="stats-grid">
+        <div class="stat-card">
+            <span class="stat-card-title">Enrolled Courses</span>
+            <span class="stat-card-value">6</span>
+            <span class="stat-card-sub">All active curriculum</span>
+        </div>
+        <div class="stat-card">
+            <span class="stat-card-title">Recorded Focus Time</span>
+            <span class="stat-card-value">14.5 hrs</span>
+            <span class="stat-card-sub">32 sessions tracked</span>
+        </div>
+        <div class="stat-card">
+            <span class="stat-card-title">Quizzes Attempted</span>
+            <span class="stat-card-value">12</span>
+            <span class="stat-card-sub">11 passed (&ge; 6/10)</span>
+        </div>
+        <div class="stat-card">
+            <span class="stat-card-title">Average Score</span>
+            <span class="stat-card-value">84%</span>
+            <span class="stat-card-sub">Benchmark achieved</span>
+        </div>
+    </div>
+
+    <div class="card-panel">
+        <h3 class="feature-title">Quick Study Launch</h3>
+        <p class="feature-desc">Jump straight back into your latest study modules.</p>
+        <div class="hero-buttons">
+            <a href="/courses/data-structures" class="btn-focus">Continue Learning</a>
+            <a href="/progress" class="btn btn-outline-secondary">View Detailed Analytics</a>
+        </div>
+    </div>
+</div>
+
+<%- include('../partials/footer.html') %>

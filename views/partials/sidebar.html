@@ -1,0 +1,47 @@
+<div class="sidebar">
+    <div class="sidebar-brand-wrapper">
+        <h2><b>FocusLearn</b></h2>
+        <p class="sidebar-tagline">Smart Learning Platform</p>
+    </div>
+    
+    <a href="/" class="<%= (typeof currentPath !== 'undefined' && currentPath === '/') ? 'active' : '' %>">
+        <i class="bi bi-house-door me-2"></i>HOME
+    </a>
+    <a href="/courses" class="<%= (typeof currentPath !== 'undefined' && currentPath.startsWith('/courses')) ? 'active' : '' %>">
+        <i class="bi bi-journal-bookmark me-2"></i>COURSES
+    </a>
+    <a href="/progress" class="<%= (typeof currentPath !== 'undefined' && currentPath === '/progress') ? 'active' : '' %>">
+        <i class="bi bi-graph-up-arrow me-2"></i>PROGRESS
+    </a>
+    <a href="/dashboard" class="<%= (typeof currentPath !== 'undefined' && currentPath === '/dashboard') ? 'active' : '' %>">
+        <i class="bi bi-speedometer2 me-2"></i>DASHBOARD
+    </a>
+
+    <div class="sidebar-bottom">
+        <% if (locals.isAuthenticated && locals.currentUser) { %>
+            <div class="sidebar-user">
+                <div class="sidebar-avatar">
+                    <%= currentUser.name.charAt(0).toUpperCase() %>
+                </div>
+                <div class="sidebar-username">
+                    <div><%= currentUser.name %></div>
+                    <small class="sidebar-email"><%= currentUser.email %></small>
+                </div>
+            </div>
+            <form action="/auth/logout" method="POST" class="sidebar-logout-form">
+                <button type="submit" class="btn-sidebar-auth btn-sidebar-logout">
+                    <i class="bi bi-box-arrow-right me-1"></i> LOGOUT
+                </button>
+            </form>
+        <% } else { %>
+            <div class="sidebar-auth-group">
+                <a href="/auth/login" class="btn-sidebar-auth text-center <%= (typeof currentPath !== 'undefined' && currentPath === '/auth/login') ? 'btn-sidebar-active' : '' %>">
+                    <i class="bi bi-box-arrow-in-right me-1"></i> LOGIN
+                </a>
+                <a href="/auth/register" class="btn-sidebar-auth text-center <%= (typeof currentPath !== 'undefined' && currentPath === '/auth/login') ? '' : 'btn-sidebar-register' %>">
+                    <i class="bi bi-person-plus me-1"></i> REGISTER
+                </a>
+            </div>
+        <% } %>
+    </div>
+</div>

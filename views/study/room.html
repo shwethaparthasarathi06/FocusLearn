@@ -1,0 +1,156 @@
+<%- include('../partials/header.html') %>
+
+    <div class="study-room-page">
+        <!-- Top Bar -->
+        <header class="study-room-header">
+            <div class="d-flex align-items-center gap-2">
+                <span class="study-room-badge">
+                    <%= course.code %>
+                </span>
+                <h1 class="study-room-title">Module <%= mod.moduleNumber %>: <%= mod.title %>
+                </h1>
+            </div>
+        </header>
+
+        <!-- Main Content: Split PDF viewer & Side Timer -->
+        <div class="study-room-layout">
+            <!-- Main Area: PDF Viewer -->
+            <main class="study-room-pdf-panel position-relative">
+                <!-- 10-Second Floating Alert Banner over PDF -->
+                <div id="floating-alert-10sec" class="floating-alert-10sec d-none">
+                    <div class="d-flex align-items-center justify-content-center gap-2">
+                        <i class="bi bi-alarm-fill fs-5"></i>
+                        <strong>Only 10sec is left!</strong> This tab will close automatically when the timer finishes.
+                    </div>
+                </div>
+
+                <% if (pdfUrl) { %>
+                    <iframe id="pdf-viewer-frame" src="<%= pdfUrl %>#toolbar=1&navpanes=0" class="pdf-iframe"
+                        title="<%= mod.title %> PDF Material">
+                    </iframe>
+                    <% } else { %>
+                        <div class="p-5 text-center my-auto">
+                            <i class="bi bi-file-earmark-pdf fs-1 text-muted mb-3 d-block"></i>
+                            <h4>PDF Material Not Available</h4>
+                            <p class="text-muted">No material file has been uploaded for this module yet.</p>
+                        </div>
+                        <% } %>
+            </main>
+
+            <!-- Side Panel: Focus Timer -->
+            <aside class="study-room-timer-panel">
+                <div class="w-100">
+                    <div class="d-flex align-items-center justify-content-between mb-3">
+                        <h5 class="timer-side-title mb-0">
+                            <i class="bi bi-stopwatch text-primary me-2"></i>Study Timer
+                        </h5>
+                    </div>
+
+                    <!-- Timer Clock Display Box -->
+                    <div class="timer-box" id="timer-box">
+                        <div class="timer-digits-main" id="timer-display">--:--</div>
+                        <div class="timer-sub-text" id="timer-sublabel">Time Remaining</div>
+                        <!-- Start Learning Play Button (Allows redoing course even after completion) -->
+                        <div id="start-learning-wrap" class="mt-2 <%= (typeof progress !== 'undefined' && progress && progress.isCourseCompleted) ? '' : 'd-none' %>">
+                            <button id="btn-start-learning" class="btn btn-sm btn-success px-3 py-1 fw-semibold shadow-sm">
+                                <i class="bi bi-play-fill me-1 fs-6"></i> Start Learning
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Progress Bar -->
+                    <div class="progress timer-progress mb-3" style="height: 8px;">
+                        <div id="timer-progress-bar"
+                            class="progress-bar progress-bar-striped progress-bar-animated bg-primary"
+                            role="progressbar" style="width: 100%;"></div>
+                    </div>
+
+                    <!-- 10-Second Warning Alert Box (Highlighted When 10s Left) -->
+                    <div id="ten-sec-warning-card" class="ten-sec-warning-card d-none">
+                        <div class="ten-sec-warning-icon">
+                            <i class="bi bi-exclamation-triangle-fill"></i>
+                        </div>
+                        <div class="ten-sec-warning-body">
+                            <div class="ten-sec-warning-title">Only 10sec is left</div>
+                            <div class="ten-sec-warning-text">Wrap up your reading! Tab will automatically close when
+                                time expires.</div>
+                        </div>
+                    </div>
+
+                    <!-- Completed State & Auto-close Alert -->
+                    <div id="timer-completed-card" class="timer-completed-card d-none">
+                        <div class="mb-2">
+                            <i class="bi bi-hourglass-bottom fs-1 text-danger"></i>
+                        </div>
+                        <h5 class="fw-bold text-danger mb-1">Time Completed!</h5>
+                        <p class="text-muted small mb-3">Closing tab automatically...</p>
+                        <button class="btn btn-danger btn-sm w-100" id="btn-force-close" onclick="window.close()">
+                            <i class="bi bi-x-circle me-1"></i> Close Tab Now
+                        </button>
+                    </div>
+
+                    <!-- Timer Controls -->
+                    <div class="d-flex gap-2 mb-3">
+                        <button id="btn-pause" class="btn btn-sm btn-outline-warning flex-grow-1">
+                            <i class="bi bi-pause-fill me-1"></i> Pause
+                        </button>
+                        <button id="btn-resume" class="btn btn-sm btn-success flex-grow-1 d-none">
+                            <i class="bi bi-play-fill me-1"></i> Resume
+                        </button>
+                        <button id="btn-reset" class="btn btn-sm btn-outline-secondary">
+                            <i class="bi bi-arrow-counterclockwise"></i> Reset
+                        </button>
+                    </div>
+
+                    <!-- Extra Timer Actions: 5-Min Break, Extra 10 Mins & Complete Course -->
+                    <div class="timer-actions-box">
+                        <button id="btn-break" class="btn btn-outline-info w-100 mb-2 fw-semibold">
+                            <i class="bi bi-cup-hot-fill me-2"></i> 5-Min Break
+                        </button>
+                        <button id="btn-end-break" class="btn btn-info text-white w-100 mb-2 fw-semibold d-none">
+                            <i class="bi bi-play-fill me-2"></i> Resume Study (End Break)
+                        </button>
+
+                        <button id="btn-add-extra-10" class="btn btn-outline-primary w-100 mb-2 fw-semibold">
+                            <i class="bi bi-plus-circle me-2"></i> Extra 10 Mins
+                        </button>
+
+                        <% if (typeof progress !== 'undefined' && progress && progress.isCourseCompleted) { %>
+                            <button id="btn-complete-course" class="btn btn-success text-white w-100 mb-2 fw-semibold" disabled>
+                                <i class="bi bi-check-circle-fill me-2"></i> Course Completed
+                            </button>
+                        <% } else { %>
+                            <button id="btn-complete-course" class="btn btn-outline-success w-100 mb-2 fw-semibold">
+                                <i class="bi bi-check-circle me-2"></i> Complete Course
+                            </button>
+                        <% } %>
+
+                        <!-- Cancel Study Session Button (Red) -->
+                        <button id="btn-cancel" class="btn btn-outline-danger w-100 fw-semibold">
+                            <i class="bi bi-x-circle me-2"></i> Cancel
+                        </button>
+                    </div>
+
+                    <!-- Course Completed Success Alert / Card -->
+                    <div id="course-completed-card" class="course-completed-card <%= (typeof progress !== 'undefined' && progress && progress.isCourseCompleted) ? '' : 'd-none' %> mt-3 p-3 text-center border rounded-3">
+                        <div class="mb-2">
+                            <i class="bi bi-trophy-fill fs-2 text-warning"></i>
+                        </div>
+                        <h6 class="fw-bold text-success mb-0">Course Completed! 🎉</h6>
+                    </div>
+                </div>
+            </aside>
+        </div>
+    </div>
+
+    <script>
+        const MODULE_ID = '<%= mod._id %>';
+        const COURSE_ID = '<%= course._id %>';
+        const COURSE_SLUG = '<%= course.slug %>';
+        const MODULE_MINS = <%= mod.estimatedMinutes || 20 %>;
+        const TEST_DURATION = <%= typeof testDuration !== 'undefined' && testDuration ? testDuration : 'null' %>;
+        const IS_COURSE_COMPLETED = <%= (typeof progress !== 'undefined' && progress && progress.isCourseCompleted) ? 'true' : 'false' %>;
+    </script>
+    <script src="/js/studyRoom.js"></script>
+
+    <%- include('../partials/footer.html') %>

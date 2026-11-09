@@ -1,0 +1,139 @@
+<%- include('../partials/header.html') %>
+<%- include('../partials/sidebar.html') %>
+
+<div class="main-content">
+    <%- include('../partials/flash.html') %>
+
+    <div class="quiz-wrapper">
+        <!-- Quiz Header -->
+        <div class="quiz-header">
+            <div>
+                <span class="badge quiz-badge-code">
+                    <%= course.code %> &bull; Module <%= moduleDoc.moduleNumber %>
+                </span>
+                <h2 class="quiz-main-title">
+                    <%= quiz.title %>
+                </h2>
+                <small class="quiz-meta-info">
+                    Passing requirement: <strong><%= quiz.passingScore %>/10 correct</strong> &bull; Total Questions: <strong>10</strong>
+                </small>
+            </div>
+            <div class="text-end">
+                <span id="answered-counter" class="badge bg-light text-dark border quiz-counter-badge">
+                    0 of 10 Answered
+                </span>
+            </div>
+        </div>
+
+        <!-- Quiz Form -->
+        <form id="quiz-form" action="/quizzes/<%= moduleDoc._id %>/submit" method="POST">
+            <% quiz.questions.forEach(function(q, qIndex) { %>
+                <div class="quiz-question-card" id="q-card-<%= qIndex %>">
+                    <div class="quiz-q-header">
+                        <span class="quiz-q-num">
+                            Question <%= qIndex + 1 %> of 10
+                        </span>
+                        <span class="q-status-badge badge bg-secondary quiz-badge-unanswered">Unanswered</span>
+                    </div>
+
+                    <div class="quiz-question-text">
+                        <%= q.questionText %>
+                    </div>
+
+                    <div class="quiz-options-list">
+                        <% q.options.forEach(function(opt, optIndex) { %>
+                            <label class="quiz-option-label" for="q<%= qIndex %>_opt<%= optIndex %>">
+                                <input type="radio" 
+                                       name="answers[<%= qIndex %>]" 
+                                       id="q<%= qIndex %>_opt<%= optIndex %>" 
+                                       value="<%= optIndex %>" 
+                                       data-qindex="<%= qIndex %>">
+                                <span><strong><%= String.fromCharCode(65 + optIndex) %>.</strong> <%= opt %></span>
+                            </label>
+                        <% }); %>
+                    </div>
+                </div>
+            <% }); %>
+
+            <!-- Submit Section -->
+            <div class="quiz-submit-box">
+                <a href="/lessons/<%= moduleDoc._id %>" class="btn-focus-outline btn-quiz-review-lesson">
+                    <i class="bi bi-book me-1"></i> Review Lesson Material
+                </a>
+                <button type="submit" id="btn-submit-quiz" class="btn-focus btn-quiz-submit-lg">
+                    <i class="bi bi-send-check me-2"></i> Submit Assessment for Grading
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const radioInputs = document.querySelectorAll('input[type="radio"]');
+    const answeredCounter = document.getElementById('answered-counter');
+    const quizForm = document.getElementById('quiz-form');
+
+    function updateProgress() {
+        const answeredQuestions = new Set();
+        radioInputs.forEach(r => {
+            if (r.checked) {
+                const qIndex = r.getAttribute('data-qindex');
+                answeredQuestions.add(qIndex);
+
+                // Update styling of card and option
+                const card = document.getElementById(`q-card-${qIndex}`);
+                if (card) {
+                    const badge = card.querySelector('.q-status-badge');
+                    if (badge) {
+                        badge.className = 'q-status-badge badge bg-success';
+                        badge.textContent = 'Answered';
+                    }
+                }
+            }
+        });
+
+        // Update selected option radio highlight
+        document.querySelectorAll('.quiz-option-label').forEach(label => {
+            const input = label.querySelector('input[type="radio"]');
+            if (input && input.checked) {
+                label.classList.add('selected');
+            } else {
+                label.classList.remove('selected');
+            }
+        });
+
+        if (answeredCounter) {
+            answeredCounter.textContent = `${answeredQuestions.size} of 10 Answered`;
+            if (answeredQuestions.size === 10) {
+                answeredCounter.className = 'badge bg-success text-white border quiz-counter-badge';
+            } else {
+                answeredCounter.className = 'badge bg-light text-dark border quiz-counter-badge';
+            }
+        }
+    }
+
+    radioInputs.forEach(input => {
+        input.addEventListener('change', updateProgress);
+    });
+
+    if (quizForm) {
+        quizForm.addEventListener('submit', (e) => {
+            const answeredCount = new Set(
+                Array.from(radioInputs).filter(r => r.checked).map(r => r.getAttribute('data-qindex'))
+            ).size;
+
+            if (answeredCount < 10) {
+                const proceed = confirm(`You have only answered ${answeredCount} of 10 questions. Unanswered questions will receive 0 marks. Submit now?`);
+                if (!proceed) {
+                    e.preventDefault();
+                }
+            }
+        });
+    }
+
+    updateProgress();
+});
+</script>
+
+<%- include('../partials/footer.html') %>

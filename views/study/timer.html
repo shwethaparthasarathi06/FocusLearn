@@ -1,0 +1,119 @@
+<%- include('../partials/header.html') %>
+<%- include('../partials/sidebar.html') %>
+
+<div class="main-content">
+    <%- include('../partials/flash.html') %>
+
+
+    <!-- Timer Container -->
+    <div class="timer-container">
+        <!-- Setup Form (visible when no session is active) -->
+        <div id="timer-setup-section" class="<%= activeSession ? 'hidden-section' : '' %>">
+            <h3 class="timer-section-heading">
+                Configure Your Study Session
+            </h3>
+
+            <div class="row g-3 text-start mb-4">
+                <div class="col-md-6">
+                    <label class="form-label timer-form-label">Select Course</label>
+                    <select id="course-select" class="form-select" required>
+                        <option value="">-- Choose Course --</option>
+                        <% courses.forEach(function(c) { %>
+                            <option value="<%= c._id %>" <%= (selectedCourseId && selectedCourseId.toString() === c._id.toString()) ? 'selected' : '' %>>
+                                <%= c.title %> (<%= c.code %>)
+                            </option>
+                        <% }); %>
+                    </select>
+                </div>
+
+                <div class="col-md-6">
+                    <label class="form-label timer-form-label">Select Topic / Module</label>
+                    <select id="module-select" class="form-select" required>
+                        <option value="">-- Select Module --</option>
+                        <% modules.forEach(function(m) { %>
+                            <option value="<%= m._id %>" data-course="<%= m.courseId %>" data-mins="<%= m.estimatedMinutes %>" <%= (selectedModuleId && selectedModuleId.toString() === m._id.toString()) ? 'selected' : '' %>>
+                                Module <%= m.moduleNumber %>: <%= m.title %>
+                            </option>
+                        <% }); %>
+                    </select>
+                </div>
+
+            </div>
+
+            <button id="btn-start-session" class="btn-focus btn-timer-start">
+                <i class="bi bi-play-circle-fill me-2"></i> Start Focused Study
+            </button>
+        </div>
+
+        <!-- Active Timer Display (visible when session is active or restored) -->
+        <div id="timer-active-section" class="<%= activeSession ? '' : 'hidden-section' %>">
+            <div id="session-info" class="timer-session-header">
+                <span id="session-course-title" class="badge timer-course-badge">
+                    <%= activeSession && activeSession.courseId ? activeSession.courseId.title : '' %>
+                </span>
+                <h4 id="session-module-title" class="timer-module-title">
+                    <%= activeSession && activeSession.moduleId ? activeSession.moduleId.title : '' %>
+                </h4>
+                <div id="timer-status-badge" class="timer-status-badge status-active">
+                    <i class="bi bi-record-circle me-1"></i> Focus Mode Active
+                </div>
+            </div>
+
+            <!-- Timer Circle -->
+            <div class="timer-circle" id="timer-circle-widget">
+                <div class="timer-digits" id="timer-display">25:00</div>
+                <small id="timer-sublabel" class="timer-sublabel-text">Time Remaining</small>
+            </div>
+
+            <!-- Timer Controls -->
+            <div class="timer-controls">
+                <button id="btn-pause" class="btn btn-warning btn-timer-ctrl">
+                    <i class="bi bi-pause-fill me-1"></i> Pause
+                </button>
+                <button id="btn-resume" class="btn btn-success btn-timer-ctrl hidden-section">
+                    <i class="bi bi-play-fill me-1"></i> Resume
+                </button>
+                <button id="btn-break" class="btn btn-info text-white btn-timer-ctrl">
+                    <i class="bi bi-cup-hot-fill me-1"></i> 5-Min Break
+                </button>
+                <button id="btn-extend" class="btn btn-outline-primary btn-timer-ctrl">
+                    <i class="bi bi-plus-circle me-1"></i> +5 Mins
+                </button>
+                <button id="btn-complete-early" class="btn btn-outline-success btn-timer-ctrl">
+                    <i class="bi bi-check2-circle me-1"></i> Complete Early
+                </button>
+                <button id="btn-cancel" class="btn btn-outline-danger btn-timer-ctrl">
+                    <i class="bi bi-x-circle me-1"></i> Cancel Session
+                </button>
+            </div>
+        </div>
+
+        <!-- Session Finished / Celebration Section -->
+        <div id="timer-completed-section" class="timer-completed-wrap hidden-section">
+            <div class="timer-check-circle">
+                <i class="bi bi-check-lg"></i>
+            </div>
+            <h3 class="timer-completed-title">Session Completed!</h3>
+            <p class="timer-completed-desc">
+                Great job! Your study minutes have been recorded. You are now prepared to take the module assessment quiz to verify your knowledge.
+            </p>
+            <div class="timer-completed-actions">
+                <a id="btn-attempt-quiz" href="#" class="btn-focus btn-timer-quiz">
+                    <i class="bi bi-patch-check me-1"></i> Attempt 10-Question Quiz Now
+                </a>
+                <button id="btn-new-session" class="btn btn-outline-secondary btn-timer-new">
+                    Configure Another Session
+                </button>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<script>
+    // Pass session data into client script
+    const INITIAL_SESSION = <%- activeSession ? JSON.stringify(activeSession) : 'null' %>;
+</script>
+<script src="/js/studyTimer.js"></script>
+
+<%- include('../partials/footer.html') %>

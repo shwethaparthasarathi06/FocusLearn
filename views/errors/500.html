@@ -1,0 +1,31 @@
+<%- include('../partials/header.html') %>
+<%- include('../partials/sidebar.html') %>
+
+<div class="main-content">
+    <div class="error-container">
+        <div class="error-code-500">
+            <%= typeof statusCode !== 'undefined' ? statusCode : 500 %>
+        </div>
+        <h2 class="error-title">Internal Server Error</h2>
+        <p class="error-desc">
+            <%= typeof message !== 'undefined' ? message : 'Something went wrong on the server while processing your request.' %>
+        </p>
+
+        <% if (typeof stack !== 'undefined' && stack) { %>
+            <div class="error-stack-box">
+                <pre class="error-stack-pre"><%= stack %></pre>
+            </div>
+        <% } %>
+
+        <div class="error-btn-group">
+            <a href="/" class="btn-focus">
+                <i class="bi bi-house-door me-1"></i> Return to Safety
+            </a>
+            <a href="javascript:history.back()" class="btn-focus-outline">
+                <i class="bi bi-arrow-left me-1"></i> Go Back
+            </a>
+        </div>
+    </div>
+</div>
+
+<%- include('../partials/footer.html') %>

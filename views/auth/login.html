@@ -1,0 +1,46 @@
+<%- include('../partials/header.html') %>
+<%- include('../partials/sidebar.html') %>
+
+<div class="main-content">
+    <%- include('../partials/flash.html') %>
+
+    <div class="auth-wrapper">
+        <div class="auth-card">
+            <div class="auth-header">
+                <div class="auth-icon-circle">
+                    <i class="bi bi-person-lock"></i>
+                </div>
+                <h2>Student Login</h2>
+                <p class="auth-subtitle">Welcome back to FocusLearn. Enter your credentials to access your courses.</p>
+            </div>
+
+            <form action="/auth/login" method="POST">
+                <div class="mb-3">
+                    <label for="email" class="form-label auth-form-label">Email Address</label>
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="bi bi-envelope"></i></span>
+                        <input type="email" class="form-control" id="email" name="email" value="<%= typeof email !== 'undefined' ? email : '' %>" required placeholder="name@gmail.com">
+                    </div>
+                </div>
+
+                <div class="mb-4">
+                    <label for="password" class="form-label auth-form-label">Password</label>
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="bi bi-shield"></i></span>
+                        <input type="password" class="form-control" id="password" name="password" required placeholder="Enter your password">
+                    </div>
+                </div>
+
+                <button type="submit" class="btn-focus btn-auth-submit">
+                    <i class="bi bi-box-arrow-in-right me-1"></i> Sign In
+                </button>
+            </form>
+
+            <div class="auth-switch-box">
+                Don't have an account? <a href="/auth/register" class="auth-link">Register here</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<%- include('../partials/footer.html') %>

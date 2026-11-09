@@ -1,0 +1,97 @@
+<%- include('partials/header.html') %>
+    <%- include('partials/sidebar.html') %>
+
+        <div class="main-content">
+            <%- include('partials/flash.html') %>
+
+                <!-- Hero / Welcome Banner -->
+                <div class="hero-banner">
+                    <span class="hero-tag">Smart Learning Platform</span>
+                    <h1 class="hero-title">Master Computer Science with FocusLearn</h1>
+                    <p class="hero-desc">
+                        A structured learning environment pairing comprehensive academic modules with an interactive
+                        <strong>Study Timer</strong> and <strong>10-Question Mastery Quizzes</strong>.
+                    </p>
+                    <div class="hero-buttons">
+                        <a href="/courses" class="btn btn-hero-primary">
+                            <i class="bi bi-book-half me-1"></i> Browse Courses
+                        </a>
+                        <a href="/auth/register" class="btn btn-hero-secondary">
+                            <i class="bi bi-person-plus me-1"></i> Get Started Free
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Features Overview -->
+                <h3 class="section-heading">How FocusLearn Works</h3>
+                <div class="features-grid">
+                    <div class="feature-card">
+
+                        <h4 class="feature-title">1. Study Structured Modules</h4>
+                        <p class="feature-desc">
+                            Curated curriculum in Applied Math, Data Structures, Software Engineering, OS, DBMS, and Web
+                            Application Development.
+                        </p>
+                    </div>
+
+                    <div class="feature-card">
+
+                        <h4 class="feature-title">2. Focused Study Sessions</h4>
+                        <p class="feature-desc">
+                            Select custom study durations with built-in pause, resume, break, and extension controls
+                            tracked reliably on MongoDB.
+                        </p>
+                    </div>
+
+                    <div class="feature-card">
+
+                        <h4 class="feature-title">3. 10-Question Quizzes</h4>
+                        <p class="feature-desc">
+                            Demonstrate topic mastery with instant server evaluation, 6/10 passing score, revision
+                            prompts, and retry capability.
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Quick Preview of Courses -->
+                <div class="section-header-row">
+                    <h3 class="section-title">Featured Courses</h3>
+                    <a href="/courses" class="section-view-all">View all courses <i class="bi bi-arrow-right"></i></a>
+                </div>
+
+                <% if (courses && courses.length> 0) { %>
+                    <div class="grid">
+                        <% courses.slice(0, 3).forEach(function(course) { %>
+                            <div class="course-box">
+                                <div class="course-top">
+                                    <img src="<%= course.image %>" alt="<%= course.title %>" class="course-img-sm">
+                                    <h3>
+                                        <%= course.title.toUpperCase() %>
+                                    </h3>
+                                </div>
+                                <div class="course-info">
+                                    <h4>
+                                        <%= course.title %> Course
+                                    </h4>
+                                    <div class="course-duration">
+                                        <span><i class="bi bi-clock"></i>
+                                            <%= course.durationHours %> hrs
+                                        </span>
+                                        <span><i class="bi bi-layers"></i>
+                                            <%= course.lessonCount %> lessons
+                                        </span>
+                                    </div>
+                                    <p class="course-excerpt">
+                                        <%= course.description.substring(0, 85) %>...
+                                    </p>
+                                    <a href="/courses/<%= course.slug %>" class="btn-focus btn-course-action">
+                                        Start Learning <i class="bi bi-arrow-right-short"></i>
+                                    </a>
+                                </div>
+                            </div>
+                            <% }); %>
+                    </div>
+                    <% } %>
+        </div>
+
+        <%- include('partials/footer.html') %>

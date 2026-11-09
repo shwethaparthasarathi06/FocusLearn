@@ -1,0 +1,116 @@
+<%- include('../partials/header.html') %>
+<%- include('../partials/sidebar.html') %>
+
+<div class="main-content">
+    <%- include('../partials/flash.html') %>
+
+    <!-- Navigation Breadcrumbs -->
+    <div class="lesson-nav-bar">
+        <div class="lesson-breadcrumbs">
+            <a href="/courses" class="lesson-crumb-link">Courses</a>
+            <span class="mx-2">&gt;</span>
+            <a href="/courses/<%= course.slug %>" class="lesson-crumb-link"><%= course.title %></a>
+            <span class="mx-2">&gt;</span>
+            <span class="lesson-crumb-active">Module <%= moduleDoc.moduleNumber %></span>
+        </div>
+
+        <div class="lesson-actions-group">
+            <a href="/study/timer?course=<%= course._id %>&module=<%= moduleDoc._id %>" class="btn-focus-outline btn-lesson-timer">
+                <i class="bi bi-stopwatch me-1"></i> Launch Study Timer
+            </a>
+            <a href="/quizzes/<%= moduleDoc._id %>" class="btn-focus btn-lesson-quiz">
+                <i class="bi bi-patch-check me-1"></i> Attempt 10-Question Quiz
+            </a>
+        </div>
+    </div>
+
+    <!-- Lesson Header -->
+    <div class="lesson-header-card">
+        <div class="lesson-header-meta">
+            <span class="badge bg-primary lesson-badge-purple">
+                Module <%= moduleDoc.moduleNumber %>
+            </span>
+            <span class="lesson-time-estimate">
+                <i class="bi bi-clock me-1"></i> Total Duration: <%= moduleDoc.estimatedMinutes %> minutes
+            </span>
+        </div>
+
+        <h1 class="lesson-header-title"><%= moduleDoc.title %></h1>
+        <p class="lesson-header-desc"><%= moduleDoc.summary %></p>
+
+        <% if (moduleDoc.keyConcepts && moduleDoc.keyConcepts.length > 0) { %>
+            <div class="lesson-tags-row mb-3">
+                <span class="lesson-tags-lbl">Key Concepts:</span>
+                <% moduleDoc.keyConcepts.forEach(function(concept) { %>
+                    <span class="lesson-tag-item">
+                        #<%= concept %>
+                    </span>
+                <% }); %>
+            </div>
+        <% } %>
+
+        <% if (moduleDoc.topics && moduleDoc.topics.length > 0) { %>
+            <div class="module-topics-list">
+                <div class="topic-title">
+                    <i class="bi bi-file-earmark-pdf-fill text-danger me-1"></i> Topic Reading Materials & PDFs:
+                </div>
+                <% moduleDoc.topics.forEach(function(t) { %>
+                    <div class="topic-item">
+                        <div class="topic-info">
+                            <span class="topic-title">
+                                <%= t.topicNumber %>. <%= t.title %> &mdash; <%= t.estimatedMinutes %> min
+                            </span>
+                        </div>
+                        <div>
+                            <a href="<%= t.pdfUrl %>" target="_blank" rel="noopener noreferrer" class="btn-topic-pdf">
+                                <i class="bi bi-file-earmark-pdf me-1"></i> Open topic PDF
+                            </a>
+                        </div>
+                    </div>
+                <% }); %>
+            </div>
+        <% } %>
+    </div>
+
+    <!-- Lesson Body / Reading Area -->
+    <div class="lesson-reading-area">
+        <div class="lesson-content-text">
+            <%= moduleDoc.content.trim() %>
+        </div>
+    </div>
+
+    <!-- Next / Previous Lesson Navigation & Quiz Call To Action -->
+    <div class="lesson-bottom-nav">
+        <div>
+            <% if (prevModule) { %>
+                <a href="/lessons/<%= prevModule._id %>" class="btn-focus-outline btn-lesson-nav">
+                    <i class="bi bi-chevron-left me-1"></i> Prev: Module <%= prevModule.moduleNumber %>
+                </a>
+            <% } else { %>
+                <a href="/courses/<%= course.slug %>" class="btn-focus-outline btn-lesson-nav">
+                    <i class="bi bi-arrow-left me-1"></i> Course Overview
+                </a>
+            <% } %>
+        </div>
+
+        <div class="text-center">
+            <a href="/quizzes/<%= moduleDoc._id %>" class="btn-focus btn-lesson-quiz-cta">
+                Ready for Assessment? Take 10-Question Quiz <i class="bi bi-arrow-right ms-1"></i>
+            </a>
+        </div>
+
+        <div>
+            <% if (nextModule) { %>
+                <a href="/lessons/<%= nextModule._id %>" class="btn-focus-outline btn-lesson-nav">
+                    Next: Module <%= nextModule.moduleNumber %> <i class="bi bi-chevron-right ms-1"></i>
+                </a>
+            <% } else { %>
+                <a href="/courses" class="btn-focus-outline btn-lesson-nav">
+                    All Courses <i class="bi bi-grid ms-1"></i>
+                </a>
+            <% } %>
+        </div>
+    </div>
+</div>
+
+<%- include('../partials/footer.html') %>

@@ -1,0 +1,47 @@
+<%- include('../partials/header.html') %>
+<%- include('../partials/sidebar.html') %>
+
+<div class="main-content">
+    <%- include('../partials/flash.html') %>
+
+    <div class="quiz-wrapper text-center">
+        <!-- Score Circle -->
+        <div class="score-badge-circle <%= attempt.passed ? 'passed' : 'failed' %>">
+            <div><%= attempt.score %>/10</div>
+            <span class="score-pct-label"><%= attempt.percentage %>%</span>
+        </div>
+
+        <% if (attempt.passed) { %>
+            <h2 class="result-title-pass">
+                <i class="bi bi-patch-check-fill me-1"></i> Assessment Passed!
+            </h2>
+            <p class="result-desc-text">
+                Congratulations! You met the passing standard of 6/10.
+            </p>
+            <!-- Only Course Overview for passed -->
+            <div class="result-actions-row">
+                <a href="/courses/<%= course.slug %>" class="btn btn-outline-secondary btn-result-action">
+                    <i class="bi bi-journal-bookmark me-1"></i> Course Overview
+                </a>
+            </div>
+        <% } else { %>
+            <h2 class="result-title-fail">
+                <i class="bi bi-exclamation-octagon-fill me-1"></i> Revision Recommended
+            </h2>
+            <p class="result-desc-text">
+                You scored <%= attempt.score %>/10 (Passing threshold is 6/10). Don't worry! Consistent review and focused practice lead to mastery.
+            </p>
+            <!-- Redo Course button for failed -->
+            <div class="result-actions-row">
+                <a href="/study/room/<%= moduleDoc._id %>" class="btn-focus btn-result-action">
+                    <i class="bi bi-arrow-repeat me-1"></i> Redo Course
+                </a>
+                <a href="/courses/<%= course.slug %>" class="btn btn-outline-secondary btn-result-action">
+                    <i class="bi bi-journal-bookmark me-1"></i> Course Overview
+                </a>
+            </div>
+        <% } %>
+    </div>
+</div>
+
+<%- include('../partials/footer.html') %>
