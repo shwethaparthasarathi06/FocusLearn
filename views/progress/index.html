@@ -4,70 +4,116 @@
 <div class="main-content">
     <%- include('../partials/flash.html') %>
 
-    <h2 class="courses-title">ACADEMIC PROGRESS TRACKER</h2>
-    
-    <div class="card-panel">
-        <div class="progress-header">
-            <strong>Overall Program Completion</strong>
-            <strong>65%</strong>
+    <!-- Page Header -->
+    <div class="top-header">
+        <div>
+            <h2 class="progress-title-heading">
+                <i class="bi bi-graph-up-arrow text-primary me-2"></i> Academic Progress Tracker
+            </h2>
+            <small class="progress-subtitle">Persistent tracking of completed modules, study hours, and quiz benchmarks</small>
         </div>
-        <div class="progress-bar-bg">
-            <div class="progress-bar-fill-75" style="width: 65%; height: 100%; background: var(--primary-purple); border-radius: 6px;"></div>
+        <div>
+            <span class="badge progress-top-badge">
+                Overall Student Completion: <%= overallCompletion %>%
+            </span>
         </div>
-        <p class="feature-desc">4 of 6 courses currently active with completed mastery quizzes.</p>
     </div>
 
-    <div class="grid">
-        <div class="course-box">
-            <div class="course-top">
-                <img src="/images/AMCS.png" alt="Applied Mathematics" class="course-icon-img">
-                <h3>APPLIED MATHEMATICS</h3>
-            </div>
-            <div class="course-info">
-                <h4>Status: 100% Completed</h4>
-                <div class="progress-bar-bg">
-                    <div class="progress-bar-fill-100" style="width: 100%; height: 100%; background: var(--primary-purple); border-radius: 6px;"></div>
-                </div>
-                <div class="course-duration d-flex justify-content-between">
-                    <span>Score: 9/10</span>
-                    <span>Passed</span>
-                </div>
-            </div>
+    <!-- Overall Summary Banner -->
+    <div class="progress-overall-box">
+        <div class="progress-overall-header">
+            <span class="progress-overall-title">Overall Program Completion</span>
+            <span class="progress-overall-val"><%= overallCompletion %>%</span>
         </div>
+        <div class="course-progress-mini progress-overall-bar">
+            <div class="course-progress-fill" data-progress="<%= overallCompletion %>"></div>
+        </div>
+        <div class="progress-overall-stats">
+            <span><i class="bi bi-layers-fill text-primary me-1"></i> Total Modules Completed: <strong><%= totalCompletedModules %> / <%= totalModulesAllCourses %></strong></span>
+            <span><i class="bi bi-clock-history text-info me-1"></i> Total Logged Focus Time: <strong><%= totalHoursStudied %> hours</strong></span>
+            <span><i class="bi bi-patch-check-fill text-success me-1"></i> Quizzes Passed: <strong><%= totalQuizzesPassed %></strong></span>
+        </div>
+    </div>
 
-        <div class="course-box">
-            <div class="course-top">
-                <img src="/images/DS.png" alt="Data Structures" class="course-icon-img">
-                <h3>DATA STRUCTURES</h3>
-            </div>
-            <div class="course-info">
-                <h4>Status: 75% Completed</h4>
-                <div class="progress-bar-bg">
-                    <div class="progress-bar-fill-75" style="width: 75%; height: 100%; background: var(--primary-purple); border-radius: 6px;"></div>
-                </div>
-                <div class="course-duration d-flex justify-content-between">
-                    <span>Score: 8/10</span>
-                    <span>In Progress</span>
-                </div>
-            </div>
-        </div>
+    <!-- Course-by-Course Progress Cards -->
+    <h3 class="progress-breakdown-heading">
+        Course Breakdown & Module Mastery
+    </h3>
 
-        <div class="course-box">
-            <div class="course-top">
-                <img src="/images/WAD.png" alt="Web Application Development" class="course-icon-img">
-                <h3>WEB APPLICATION AND DEVELOPMENT</h3>
-            </div>
-            <div class="course-info">
-                <h4>Status: 50% Completed</h4>
-                <div class="progress-bar-bg">
-                    <div class="progress-bar-fill-50" style="width: 50%; height: 100%; background: var(--primary-purple); border-radius: 6px;"></div>
+    <div class="progress-cards-container">
+        <% courseProgressData.forEach(function(item) { %>
+            <div class="course-progress-card-item">
+                <div class="progress-card-top">
+                    <div class="progress-course-info">
+                        <div class="progress-img-box">
+                            <img src="<%= item.course.image %>" alt="<%= item.course.title %>" class="progress-img">
+                        </div>
+                        <div>
+                            <span class="badge progress-course-badge"><%= item.course.code %></span>
+                            <h4 class="progress-course-name"><%= item.course.title %></h4>
+                            <small class="progress-subtitle"><%= item.course.category %></small>
+                        </div>
+                    </div>
+
+                    <div>
+                        <% if (item.isCompleted) { %>
+                            <span class="badge bg-success progress-status-badge">
+                                <i class="bi bi-trophy-fill me-1"></i> Course Completed
+                            </span>
+                        <% } else if (item.completionPercentage > 0) { %>
+                            <span class="badge bg-primary progress-status-badge in-progress">
+                                In Progress (<%= item.completionPercentage %>%)
+                            </span>
+                        <% } else { %>
+                            <span class="badge bg-secondary progress-status-badge">
+                                Not Started
+                            </span>
+                        <% } %>
+                    </div>
                 </div>
-                <div class="course-duration d-flex justify-content-between">
-                    <span>Score: 7/10</span>
-                    <span>In Progress</span>
+
+                <!-- Progress Bar -->
+                <div class="progress-bar-wrap">
+                    <div class="progress-bar-label">
+                        <span>Progress: <%= item.completedModulesCount %> of <%= item.totalModulesCount %> modules</span>
+                        <span><%= item.completionPercentage %>%</span>
+                    </div>
+                    <div class="course-progress-mini progress-bar-height">
+                        <div class="course-progress-fill" data-progress="<%= item.completionPercentage %>"></div>
+                    </div>
+                </div>
+
+                <!-- Course Stats Grid -->
+                <div class="row g-2 text-center progress-stats-grid">
+                    <div class="col-3">
+                        <small class="progress-stat-label">Study Time</small>
+                        <div class="progress-stat-val"><%= item.studyTimeFormatted %></div>
+                    </div>
+                    <div class="col-3">
+                        <small class="progress-stat-label">Quiz Attempts</small>
+                        <div class="progress-stat-val"><%= item.quizAttemptsCount %></div>
+                    </div>
+                    <div class="col-3">
+                        <small class="progress-stat-label">Latest Score</small>
+                        <div class="progress-stat-val"><%= item.latestScore !== null ? item.latestScore + '/10' : '—' %></div>
+                    </div>
+                    <div class="col-3">
+                        <small class="progress-stat-label">Best Score</small>
+                        <div class="progress-stat-val green"><%= item.bestScore !== null ? item.bestScore + '/10' : '—' %></div>
+                    </div>
+                </div>
+
+                <!-- Action Shortcut -->
+                <div class="progress-actions-box">
+                    <a href="/courses/<%= item.course.slug %>" class="btn-focus btn-progress-open">
+                        <i class="bi bi-journal-text me-1"></i> Open Course Modules
+                    </a>
+                    <a href="/study/timer?course=<%= item.course._id %>" class="btn-focus-outline btn-progress-timer">
+                        <i class="bi bi-stopwatch me-1"></i> Launch Timer
+                    </a>
                 </div>
             </div>
-        </div>
+        <% }); %>
     </div>
 </div>
 

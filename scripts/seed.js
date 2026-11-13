@@ -4,7 +4,12 @@ const { connectDB } = require('../config/db');
 const Course = require('../models/Course');
 const Module = require('../models/Module');
 const Quiz = require('../models/Quiz');
+const StudySession = require('../models/StudySession');
+const User = require('../models/User');
 
+// ---------------------------------------------------------------------------
+// Course and module data
+// ---------------------------------------------------------------------------
 const coursesData = [
   {
     code: 'AMCS',
@@ -22,10 +27,11 @@ const coursesData = [
     title: 'Data Structures',
     slug: 'data-structures',
     durationHours: 3.0,
-    lessonCount: 18,
+    lessonCount: 3,
     image: '/images/DS.png',
-    description: 'Master core computational structures including Arrays, Strings, Linked Lists, Stacks, Queues, Binary Trees, Heaps, Hash Tables, and Graphs with Big-O time complexity analysis.',
+    description: 'Master core computational structures including Introduction to Data Structures, Stacks & Queues, and Linked Lists with algorithm complexity analysis.',
     order: 2,
+    category: 'Master of Computer Applications',
     modules: [
       {
         moduleNumber: 1,
@@ -33,91 +39,16 @@ const coursesData = [
         slug: 'introduction-to-data-structures',
         summary: 'Understand what data structures are, primitive vs non-primitive classifications, linear vs non-linear organizations, and algorithm analysis with Big-O notation.',
         estimatedMinutes: 38,
-        keyConcepts: ['Data Structures Definition', 'Primitive vs Non-primitive', 'Linear vs Non-linear', 'Algorithms', 'Big-O Notation', 'Time & Space Complexity'],
+        pdfUrl: '/materials/Data_Structure.pdf',
+        content: 'Understand what data structures are, primitive vs non-primitive classifications, linear vs non-linear organizations, and algorithm analysis with Big-O notation.',
         topics: [
           {
             topicNumber: 1,
-            title: 'What Are Data Structures?',
-            estimatedMinutes: 8,
-            pdfUrl: '/materials/01_What_Are_Data_Structures.pdf'
-          },
-          {
-            topicNumber: 2,
-            title: 'Types of Data Structures',
-            estimatedMinutes: 8,
-            pdfUrl: '/materials/02_Types_of_Data_Structures.pdf'
-          },
-          {
-            topicNumber: 3,
-            title: 'Linear vs. Non-linear Structures',
-            estimatedMinutes: 8,
-            pdfUrl: '/materials/03_Linear_vs_Non_Linear.pdf'
-          },
-          {
-            topicNumber: 4,
-            title: 'Algorithms and Big-O Notation',
-            estimatedMinutes: 14,
-            pdfUrl: '/materials/04_Algorithms_and_Big_O.pdf'
+            title: 'Introduction to Data Structures',
+            estimatedMinutes: 38,
+            pdfUrl: '/materials/Data_Structure.pdf'
           }
         ],
-        content: `
-# Module 1: Introduction to Data Structures
-Total: 38 minutes
-
-Data structures are systematic ways of organizing, storing, and manipulating data efficiently within a computer system. The choice of appropriate data structure directly influences algorithm performance and resource consumption.
-
----
-
-## 1. What Are Data Structures? (8 min)
-A data structure is a specialized format for organizing, processing, retrieving, and storing data.
-- **Data Item:** A single unit of values (e.g., student roll number, name).
-- **Group Items:** Data items divided into sub-items (e.g., date broken down into day, month, year).
-- **Elementary Items:** Indivisible items (e.g., integer ID).
-- **Need for Data Structures:** High processing speed, data search optimization, managing multiple concurrent user requests, and minimizing memory overhead.
-
----
-
-## 2. Types of Data Structures (8 min)
-Data structures are broadly categorized into two major divisions:
-1. **Primitive Data Structures:**
-   - Basic data types supported directly by programming languages (e.g., \`int\`, \`float\`, \`char\`, \`boolean\`, pointers).
-   - Hold single raw values and are operated on directly by machine instructions.
-2. **Non-Primitive Data Structures:**
-   - Sophisticated structures derived from primitive types to manage groups of homogeneous or heterogeneous data.
-   - Divided into Linear (Arrays, Linked Lists, Stacks, Queues) and Non-Linear (Trees, Graphs, Hash Tables).
-
----
-
-## 3. Linear vs. Non-linear Structures (8 min)
-- **Linear Data Structures:**
-  - Elements form a sequential sequence; each element has a unique predecessor and successor (except first and last).
-  - Single-level traversal in one pass.
-  - *Examples:* Arrays, Linked Lists, Stacks, Queues.
-  - Memory: Often contiguous or linked sequentially.
-- **Non-Linear Data Structures:**
-  - Elements do not form a sequence; an element may connect to multiple elements.
-  - Hierarchical (parent-child) or interconnected relationships.
-  - Multi-level traversal (requires recursion, BFS, or DFS).
-  - *Examples:* Trees, Graphs, Multi-dimensional structures.
-
----
-
-## 4. Algorithms and Big-O Notation (14 min)
-An algorithm is a step-by-step finite sequence of computational instructions to solve a specific problem.
-
-### Asymptotic Notations:
-- **Big-O ($O$):** Upper bound on execution time (Worst-case analysis).
-- **Big-Omega ($\\Omega$):** Lower bound on execution time (Best-case analysis).
-- **Big-Theta ($\\Theta$):** Tight bound (Average-case analysis).
-
-### Common Time Complexities (Fastest to Slowest):
-1. $O(1)$ — Constant Time (array index lookup).
-2. $O(\\log n)$ — Logarithmic Time (Binary Search).
-3. $O(n)$ — Linear Time (Linear Search, single loop).
-4. $O(n \\log n)$ — Linearithmic Time (Merge Sort, Quick Sort).
-5. $O(n^2)$ — Quadratic Time (Nested loops, Bubble Sort).
-6. $O(2^n)$ — Exponential Time (Recursive Fibonacci).
-        `,
         quiz: {
           title: 'Introduction to Data Structures Assessment',
           questions: [
@@ -206,414 +137,32 @@ An algorithm is a step-by-step finite sequence of computational instructions to 
       },
       {
         moduleNumber: 2,
-        title: 'Arrays and Strings',
-        slug: 'arrays-and-strings',
-        summary: 'Master memory layouts of 1D and 2D arrays, fundamental traversal and manipulation algorithms, basic searching, sorting, and core string operations.',
-        estimatedMinutes: 32,
-        keyConcepts: ['1D Arrays', '2D Matrices', 'Row-Major Order', 'Column-Major Order', 'Linear Search', 'Binary Search', 'String Immutability'],
-        topics: [
-          {
-            topicNumber: 5,
-            title: 'Array Operations and Traversal',
-            estimatedMinutes: 12,
-            pdfUrl: '/materials/05_Array_Operations_and_Traversal.pdf'
-          },
-          {
-            topicNumber: 6,
-            title: 'Searching and Sorting Basics',
-            estimatedMinutes: 12,
-            pdfUrl: '/materials/06_Searching_and_Sorting_Basics.pdf'
-          },
-          {
-            topicNumber: 7,
-            title: 'One-dimensional and Two-dimensional Arrays',
-            estimatedMinutes: 10,
-            pdfUrl: '/materials/07_1D_and_2D_Arrays.pdf'
-          },
-          {
-            topicNumber: 8,
-            title: 'String Operations',
-            estimatedMinutes: 10,
-            pdfUrl: '/materials/08_String_Operations.pdf'
-          }
-        ],
-        content: `
-# Module 2: Arrays and Strings
-Total: 32 minutes
-
-Arrays and strings form the foundation of contiguous memory storage. Understanding their indexing arithmetic and memory layouts is critical for low-level performance optimization.
-
----
-
-## 5. Array Operations and Traversal (12 min)
-An array is a collection of elements of the same data type placed in contiguous memory locations.
-- **Base Address:** The memory address of the first element $A[0]$.
-- **Address Calculation Formula (1D Array):**
-  $$\\text{Address}(A[i]) = \\text{Base Address} + (i - \\text{lower bound}) \\times \\text{element size}$$
-- **Core Operations:**
-  - *Traversal:* Visiting each element exactly once ($O(n)$).
-  - *Insertion:* Inserting at index $i$ requires shifting elements right ($O(n)$ worst case, $O(1)$ at end if space exists).
-  - *Deletion:* Removing at index $i$ requires shifting elements left ($O(n)$).
-  - *Lookup:* Accessing by index $A[i]$ is instantaneous ($O(1)$).
-
----
-
-## 6. Searching and Sorting Basics (12 min)
-- **Linear Search:** Compares key with each element sequentially from index 0 to $n-1$. Best case $O(1)$, worst case $O(n)$. Works on unsorted data.
-- **Binary Search:** Requires a sorted array. Divides the search interval in half repeatedly:
-  $$\\text{mid} = \\text{low} + \\lfloor(\\text{high} - \\text{low}) / 2\\rfloor$$
-  Time Complexity: $O(\\log n)$.
-- **Bubble Sort:** Repeatedly steps through the list, compares adjacent elements, and swaps them if out of order. Worst/Average: $O(n^2)$.
-- **Insertion Sort:** Builds sorted array one element at a time by inserting into proper position. Best: $O(n)$, Worst: $O(n^2)$.
-
----
-
-## 7. One-dimensional and Two-dimensional Arrays (10 min)
-- **1D Array:** Linear list with single subscript.
-- **2D Array (Matrix):** Grid with $R$ rows and $C$ columns.
-- **Memory Mapping Representations:**
-  - *Row-Major Order (Used in C/C++, Java):* Rows stored consecutively.
-    $$\\text{Address}(A[i][j]) = \\text{Base} + (i \\times C + j) \\times W$$
-  - *Column-Major Order (Used in Fortran, MATLAB):* Columns stored consecutively.
-    $$\\text{Address}(A[i][j]) = \\text{Base} + (j \\times R + i) \\times W$$
-
----
-
-## 8. String Operations (10 min)
-A string is an array of characters, often terminated with a null character (\`\\0\`) in C-style implementations or treated as immutable objects in languages like JavaScript, Python, and Java.
-- **Common Operations:** Length computation ($O(n)$ or $O(1)$), Concatenation ($O(m + n)$), Substring extraction ($O(k)$), Pattern matching (Naive $O(m \\times n)$, KMP $O(m + n)$).
-        `,
-        quiz: {
-          title: 'Arrays and Strings Assessment',
-          questions: [
-            {
-              questionText: 'What is the time complexity of accessing an array element via its index A[i]?',
-              options: ['O(n)', 'O(log n)', 'O(1)', 'O(n^2)'],
-              correctOptionIndex: 2,
-              explanation: 'Because array elements occupy contiguous memory, index arithmetic calculates the exact address in O(1) constant time.'
-            },
-            {
-              questionText: 'In row-major order storage for a 2D array A[R][C], how are elements laid out in memory?',
-              options: [
-                'Elements of each column are stored consecutively',
-                'Elements of each row are stored consecutively in sequence',
-                'Elements along diagonals are stored consecutively',
-                'Elements are stored in random hashed positions'
-              ],
-              correctOptionIndex: 1,
-              explanation: 'Row-major order stores all elements of row 0, followed by all elements of row 1, and so forth.'
-            },
-            {
-              questionText: 'What prerequisite is strictly required before executing a Binary Search on an array?',
-              options: [
-                'The array size must be an exact power of 2',
-                'The array elements must be sorted in ascending or descending order',
-                'The array must only contain positive integers',
-                'The array must be dynamically allocated on the heap'
-              ],
-              correctOptionIndex: 1,
-              explanation: 'Binary Search depends on comparing the target with the median element, which requires sorted order.'
-            },
-            {
-              questionText: 'What is the worst-case time complexity of inserting an element at the beginning (index 0) of an array of size n?',
-              options: ['O(1)', 'O(log n)', 'O(n)', 'O(n log n)'],
-              correctOptionIndex: 2,
-              explanation: 'Inserting at index 0 requires shifting all n existing elements one position to the right, which takes O(n) operations.'
-            },
-            {
-              questionText: 'What is the worst-case time complexity of Bubble Sort?',
-              options: ['O(n)', 'O(n log n)', 'O(n^2)', 'O(2^n)'],
-              correctOptionIndex: 2,
-              explanation: 'Bubble Sort compares adjacent elements in nested passes, yielding O(n^2) worst-case time complexity.'
-            },
-            {
-              questionText: 'In languages where strings are immutable, what happens when a string is modified?',
-              options: [
-                'The underlying memory characters are changed in-place',
-                'A new string object is allocated in memory with the updated content',
-                'The operating system throws a memory fault',
-                'The compiler deletes the original variable'
-              ],
-              correctOptionIndex: 1,
-              explanation: 'Immutability means the original string cannot be altered; any modification constructs a brand-new string object.'
-            },
-            {
-              questionText: 'In column-major order for a matrix with R rows and C columns, what is the address offset multiplier for column index j?',
-              options: ['j * C', 'j * R', 'j + R', 'j * (R + C)'],
-              correctOptionIndex: 1,
-              explanation: 'In column-major order, each preceding column contains R rows, so column index j skips j * R elements.'
-            },
-            {
-              questionText: 'What does Linear Search do when the searched element is not present in an array of size n?',
-              options: [
-                'Halves the array and returns immediately',
-                'Inspects every element from index 0 to n-1 before reporting not found',
-                'Sorts the array automatically',
-                'Returns index 0 by default'
-              ],
-              correctOptionIndex: 1,
-              explanation: 'Linear search sequentially examines all n items in the worst case before concluding the element is absent.'
-            },
-            {
-              questionText: 'Which operation on an array is most efficient when size is within allocated capacity?',
-              options: [
-                'Deletion at index 0',
-                'Insertion at index 0',
-                'Appending an element at the end of the array',
-                'Inserting at the middle index'
-              ],
-              correctOptionIndex: 2,
-              explanation: 'Appending at the end requires no shifting of elements and operates in O(1) constant time.'
-            },
-            {
-              questionText: 'What is the formula for the number of elements in a 2D array declared as A[1..5][1..10]?',
-              options: ['15', '50', '25', '100'],
-              correctOptionIndex: 1,
-              explanation: 'Total elements = (5 - 1 + 1) * (10 - 1 + 1) = 5 * 10 = 50 elements.'
-            }
-          ]
-        }
-      },
-      {
-        moduleNumber: 3,
-        title: 'Linked Lists',
-        slug: 'linked-lists',
-        summary: 'Examine dynamic node allocations, pointer manipulation, singly and doubly linked lists, insertion, deletion at various positions, and traversal techniques.',
-        estimatedMinutes: 30,
-        keyConcepts: ['Singly Linked List', 'Doubly Linked List', 'Pointers & References', 'Head and Tail', 'Insertion/Deletion', 'Traversal'],
-        topics: [
-          {
-            topicNumber: 9,
-            title: 'Singly and Doubly Linked Lists',
-            estimatedMinutes: 12,
-            pdfUrl: '/materials/09_Singly_and_Doubly_Linked_Lists.pdf'
-          },
-          {
-            topicNumber: 10,
-            title: 'Linked List Insertion and Deletion',
-            estimatedMinutes: 10,
-            pdfUrl: '/materials/10_Linked_List_Insertion_and_Deletion.pdf'
-          },
-          {
-            topicNumber: 11,
-            title: 'Linked List Traversal and Searching',
-            estimatedMinutes: 8,
-            pdfUrl: '/materials/11_Linked_List_Traversal_and_Searching.pdf'
-          }
-        ],
-        content: `
-# Module 3: Linked Lists
-Total: 30 minutes
-
-A Linked List is a linear dynamic data structure where elements (called nodes) are stored non-contiguously in memory and connected via pointers.
-
----
-
-## 9. Singly and Doubly Linked Lists (12 min)
-- **Node Structure:** Contains a \`data\` field and one or more pointer/reference fields.
-- **Singly Linked List (SLL):**
-  - Each node contains \`data\` and a \`next\` pointer pointing to the following node.
-  - The last node's \`next\` points to \`NULL\`.
-  - Traversal is strictly unidirectional (forward only).
-- **Doubly Linked List (DLL):**
-  - Each node contains \`data\`, \`next\` pointer, and \`prev\` pointer pointing to predecessor.
-  - Allows bidirectional traversal (forward and backward).
-  - Extra memory overhead: Requires storing two pointers per node.
-- **Circular Linked List:**
-  - The last node's \`next\` pointer points back to the \`head\` node instead of \`NULL\`.
-
----
-
-## 10. Linked List Insertion and Deletion (10 min)
-Unlike arrays, linked lists do not require shifting elements during insertion or deletion:
-- **Insertion at Beginning:**
-  - Allocate new node $\\to$ set \`newNode.next = head\` $\\to$ update \`head = newNode\`. Time: $O(1)$.
-- **Insertion at End:**
-  - Traverse to last node ($O(n)$) $\\to$ set \`lastNode.next = newNode\`. If \`tail\` pointer is maintained: $O(1)$.
-- **Deletion at Beginning:**
-  - Set \`temp = head\` $\\to$ \`head = head.next\` $\\to$ free \`temp\`. Time: $O(1)$.
-- **Deletion by Value:**
-  - Search node and track previous node ($O(n)$) $\\to$ \`prev.next = current.next\` $\\to$ free \`current\`.
-
----
-
-## 11. Linked List Traversal and Searching (8 min)
-- **Traversal:** Starting at \`head\`, follow \`current = current.next\` until \`current == NULL\`. Time: $O(n)$.
-- **Searching:** Linear comparison along traversal. Best case: $O(1)$ (head), Worst case: $O(n)$ (tail or absent).
-- **No Direct Indexing:** Linked lists cannot perform $O(1)$ random access like arrays; reaching index $k$ requires $k$ pointer dereferences.
-        `,
-        quiz: {
-          title: 'Linked Lists Assessment',
-          questions: [
-            {
-              questionText: 'What are the two standard components of a node in a Singly Linked List?',
-              options: [
-                'Two data values',
-                'Data field and a Next pointer',
-                'Key and Array of children',
-                'Row index and Column index'
-              ],
-              correctOptionIndex: 1,
-              explanation: 'A singly linked list node contains a payload data field and a next pointer to the succeeding node.'
-            },
-            {
-              questionText: 'What is the time complexity of inserting a new node at the head of a linked list?',
-              options: ['O(n)', 'O(1)', 'O(log n)', 'O(n^2)'],
-              correctOptionIndex: 1,
-              explanation: 'Inserting at head only requires updating the new node next pointer and reassigning head, taking O(1) constant time.'
-            },
-            {
-              questionText: 'What distinctive advantage does a Doubly Linked List have over a Singly Linked List?',
-              options: [
-                'It uses less memory per node',
-                'It allows bidirectional traversal (both forward and backward)',
-                'It supports constant-time random access by index',
-                'It does not require null termination'
-              ],
-              correctOptionIndex: 1,
-              explanation: 'With both next and prev pointers, a DLL can be traversed in both directions.'
-            },
-            {
-              questionText: 'In a Circular Singly Linked List, where does the last node point to?',
-              options: ['NULL', 'The previous node', 'The first (head) node', 'A random memory location'],
-              correctOptionIndex: 2,
-              explanation: 'In a circular linked list, the final node wraps around to point to the head node.'
-            },
-            {
-              questionText: 'Why can Binary Search NOT be efficiently executed on a standard Singly Linked List in O(log n) time?',
-              options: [
-                'Linked lists cannot store sorted values',
-                'Linked lists do not support O(1) random access to middle elements',
-                'Pointers cannot be compared with integers',
-                'Linked list size is fixed at compile time'
-              ],
-              correctOptionIndex: 1,
-              explanation: 'Finding the middle of a linked list takes O(n) traversal, eliminating the O(log n) advantage of binary search.'
-            },
-            {
-              questionText: 'What is the space complexity overhead per node in a Doubly Linked List on a 64-bit architecture?',
-              options: ['0 extra bytes', '8 bytes (one pointer)', '16 bytes (two pointers: next and prev)', '32 bytes'],
-              correctOptionIndex: 2,
-              explanation: 'Each 64-bit pointer is 8 bytes; storing both next and prev pointers requires 16 bytes of pointer overhead per node.'
-            },
-            {
-              questionText: 'What condition indicates that a singly linked list is empty?',
-              options: ['head.next == NULL', 'head == NULL', 'head.data == 0', 'tail == NULL && head != NULL'],
-              correctOptionIndex: 1,
-              explanation: 'A linked list is empty when the head pointer points to NULL (or null).'
-            },
-            {
-              questionText: 'What is the time complexity to delete a node given a pointer directly to that node in a Doubly Linked List?',
-              options: ['O(n)', 'O(1)', 'O(log n)', 'O(n^2)'],
-              correctOptionIndex: 1,
-              explanation: 'Because a DLL node has pointers to both predecessor and successor, node removal takes O(1) constant time.'
-            },
-            {
-              questionText: 'What is a memory leak in manual memory management languages when deleting linked list nodes?',
-              options: [
-                'Accessing a node that has already been cleared',
-                'Failing to deallocate/free memory occupied by unlinked nodes',
-                'Allocating nodes with negative pointers',
-                'Assigning head to point to tail'
-              ],
-              correctOptionIndex: 1,
-              explanation: 'A memory leak happens when dynamically allocated nodes are removed from list pointers without freeing memory.'
-            },
-            {
-              questionText: 'Which algorithm is used to detect a cycle in a linked list in O(n) time and O(1) memory?',
-              options: [
-                'Binary Search',
-                'Floyd\'s Cycle-Finding Algorithm (Tortoise and Hare)',
-                'Dijkstra\'s Shortest Path Algorithm',
-                'Quick Sort'
-              ],
-              correctOptionIndex: 1,
-              explanation: 'Floyd\'s Tortoise and Hare algorithm uses two pointers moving at different speeds to detect cycles in O(n) time and O(1) space.'
-            }
-          ]
-        }
-      },
-      {
-        moduleNumber: 4,
         title: 'Stacks and Queues',
         slug: 'stacks-and-queues',
-        summary: 'Explore LIFO and FIFO abstract data types, stack push/pop operations, queue enqueue/dequeue operations, and real-world applications in expression evaluation and scheduling.',
-        estimatedMinutes: 20,
-        keyConcepts: ['LIFO', 'FIFO', 'Push / Pop', 'Enqueue / Dequeue', 'Infix to Postfix', 'Call Stack', 'Circular Queue'],
+        summary: 'Explore LIFO and FIFO data structures, stack push/pop operations, expression conversions (infix, prefix, postfix), queue enqueue/dequeue, circular queues, and deques.',
+        estimatedMinutes: 50,
+        pdfUrl: '/materials/Stack_Queue.pdf',
+        content: 'Explore LIFO and FIFO data structures, stack push/pop operations, expression conversions (infix, prefix, postfix), queue enqueue/dequeue, circular queues, and deques.',
         topics: [
           {
-            topicNumber: 12,
-            title: 'Stack and Queue Operations',
-            estimatedMinutes: 12,
-            pdfUrl: '/materials/12_Stacks_Queues_Operations.pdf'
-          },
-          {
-            topicNumber: 13,
-            title: 'Stack and Queue Applications',
-            estimatedMinutes: 8,
-            pdfUrl: '/materials/13_Stack_Queue_Applications.pdf'
+            topicNumber: 1,
+            title: 'Stacks and Queues',
+            estimatedMinutes: 50,
+            pdfUrl: '/materials/Stack_Queue.pdf'
           }
         ],
-        content: `
-# Module 4: Stacks and Queues
-Total: 20 minutes
-
-Stacks and Queues are constrained linear data structures with strictly defined insertion and deletion access points.
-
----
-
-## 12. Stack and Queue Operations (12 min)
-- **Stack (LIFO — Last In, First Out):**
-  - Operations occur only at one end: the **Top**.
-  - \`push(x)\`: Add item to top ($O(1)$).
-  - \`pop()\`: Remove item from top ($O(1)$).
-  - \`peek()\` / \`top()\`: View top element without removing ($O(1)$).
-  - \`isEmpty()\`: Check if stack is empty ($O(1)$).
-  - Underflow (popping empty stack) vs Overflow (pushing full static stack).
-- **Queue (FIFO — First In, First Out):**
-  - Operations occur at two ends: **Front** and **Rear**.
-  - \`enqueue(x)\`: Insert item at Rear ($O(1)$).
-  - \`dequeue()\`: Remove item from Front ($O(1)$).
-  - **Circular Queue:** Solves the linear queue drawback where deleted front space cannot be reused by wrapping indices modulo size:
-    $$\\text{rear} = (\\text{rear} + 1) \\pmod N$$
-
----
-
-## 13. Stack and Queue Applications (8 min)
-- **Stack Applications:**
-  - Function Call Stack (Recursion management and return addresses).
-  - Expression Evaluation (Infix to Postfix / Prefix conversion using Shunting-Yard).
-  - Parentheses balancing and syntax validation in compilers.
-  - Undo/Redo operations in text editors.
-  - Depth-First Search (DFS) graph traversal.
-- **Queue Applications:**
-  - CPU process scheduling (Round-Robin).
-  - Printer spooling buffers.
-  - Breadth-First Search (BFS) graph traversal.
-  - Asynchronous message brokers (RabbitMQ, Kafka queues).
-        `,
         quiz: {
           title: 'Stacks and Queues Assessment',
           questions: [
             {
               questionText: 'What operational discipline does a Stack data structure follow?',
-              options: [
-                'FIFO (First In, First Out)',
-                'LIFO (Last In, First Out)',
-                'Random Access Priority',
-                'Hierarchical Ordering'
-              ],
+              options: ['FIFO (First In, First Out)', 'LIFO (Last In, First Out)', 'Random Access Priority', 'Hierarchical Ordering'],
               correctOptionIndex: 1,
               explanation: 'A stack operates on LIFO (Last In, First Out) discipline, where the most recently added item is the first removed.'
             },
             {
               questionText: 'What operational discipline does a standard Queue data structure follow?',
-              options: [
-                'LIFO (Last In, First Out)',
-                'FIFO (First In, First Out)',
-                'LILO (Last In, Last Out only)',
-                'Priority Weighting'
-              ],
+              options: ['LIFO (Last In, First Out)', 'FIFO (First In, First Out)', 'LILO (Last In, Last Out only)', 'Priority Weighting'],
               correctOptionIndex: 1,
               explanation: 'A queue operates on FIFO (First In, First Out) discipline, where the first inserted item is the first dequeued.'
             },
@@ -679,300 +228,98 @@ Stacks and Queues are constrained linear data structures with strictly defined i
         }
       },
       {
-        moduleNumber: 5,
-        title: 'Trees and Graphs',
-        slug: 'trees-and-graphs',
-        summary: 'Learn hierarchical and networked data structures, binary trees, inorder/preorder/postorder traversals, Binary Search Trees (BST), and graph representations with BFS/DFS.',
-        estimatedMinutes: 36,
-        keyConcepts: ['Binary Tree', 'BST Property', 'Inorder / Preorder / Postorder', 'Adjacency Matrix / List', 'BFS', 'DFS'],
+        moduleNumber: 3,
+        title: 'Linked List',
+        slug: 'linked-list',
+        summary: 'Master dynamic non-contiguous node storage, pointer manipulation, singly linked lists, doubly linked lists, circular linked lists, and polynomial applications.',
+        estimatedMinutes: 46,
+        pdfUrl: '/materials/Linked_List.pdf',
+        content: 'Master dynamic non-contiguous node storage, pointer manipulation, singly linked lists, doubly linked lists, circular linked lists, and polynomial applications.',
         topics: [
           {
-            topicNumber: 14,
-            title: 'Binary Trees and Traversal',
-            estimatedMinutes: 12,
-            pdfUrl: '/materials/14_Binary_Trees_and_Traversal.pdf'
-          },
-          {
-            topicNumber: 15,
-            title: 'Binary Search Trees',
-            estimatedMinutes: 10,
-            pdfUrl: '/materials/15_Binary_Search_Trees.pdf'
-          },
-          {
-            topicNumber: 16,
-            title: 'Graph Representation, BFS and DFS',
-            estimatedMinutes: 14,
-            pdfUrl: '/materials/16_Graphs_BFS_DFS.pdf'
+            topicNumber: 1,
+            title: 'Linked List',
+            estimatedMinutes: 46,
+            pdfUrl: '/materials/Linked_List.pdf'
           }
         ],
-        content: `
-# Module 5: Trees and Graphs
-Total: 36 minutes
-
-Trees and Graphs represent non-linear relationships. Trees model hierarchies (DOM trees, file systems), while Graphs model networks (social connections, routing protocols).
-
----
-
-## 14. Binary Trees and Traversal (12 min)
-- **Binary Tree:** A tree where every node has at most two children: \`left\` and \`right\`.
-- **Key Terminology:** Root, Leaf (node with 0 children), Height (longest path from root to leaf), Depth.
-- **Tree Traversals (Depth-First):**
-  - **Inorder (Left, Root, Right):** Produces elements in non-decreasing order for BSTs.
-  - **Preorder (Root, Left, Right):** Useful for cloning/serializing trees.
-  - **Postorder (Left, Right, Root):** Useful for deleting trees and evaluating postfix expression trees.
-- **Breadth-First Traversal (Level-Order):** Visits nodes level-by-level using a FIFO queue.
-
----
-
-## 15. Binary Search Trees (BST) (10 min)
-- **BST Property:** For every node $X$:
-  - All keys in left subtree $< X.\\text{key}$.
-  - All keys in right subtree $> X.\\text{key}$.
-- **Operations:**
-  - *Search:* If $target < root$, recurse left; if $target > root$, recurse right.
-  - *Insertion:* Traverse until finding NULL position preserving BST invariant.
-  - *Deletion:*
-    - Leaf node: Delete directly.
-    - One child: Connect parent directly to child.
-    - Two children: Replace with Inorder Successor (smallest in right subtree) or Inorder Predecessor.
-  - *Time Complexity:* Balanced BST: $O(\\log n)$. Degenerate/Skewed BST: $O(n)$.
-
----
-
-## 16. Graph Representation, BFS and DFS (14 min)
-A Graph $G = (V, E)$ consists of vertices $V$ and edges $E$ (Directed or Undirected, Weighted or Unweighted).
-- **Representations:**
-  - **Adjacency Matrix:** A 2D array $M[V][V]$ where $M[i][j] = 1$ if edge exists. Space: $O(V^2)$.
-  - **Adjacency List:** An array of linked lists/vectors where list $i$ contains neighbors of vertex $i$. Space: $O(V + E)$. Ideal for sparse graphs.
-- **Graph Traversal Algorithms:**
-  - **Breadth-First Search (BFS):** Explores neighbors level by level using a Queue. Finds shortest path in unweighted graphs. Time: $O(V + E)$.
-  - **Depth-First Search (DFS):** Explores as deep as possible along each branch before backtracking using a Stack / Recursion. Time: $O(V + E)$.
-        `,
         quiz: {
-          title: 'Trees and Graphs Assessment',
+          title: 'Linked Lists Assessment',
           questions: [
             {
-              questionText: 'What is the fundamental property of a Binary Search Tree (BST)?',
+              questionText: 'What are the two standard components of a node in a Singly Linked List?',
+              options: ['Two data values', 'Data field and a Next pointer', 'Key and Array of children', 'Row index and Column index'],
+              correctOptionIndex: 1,
+              explanation: 'A singly linked list node contains a payload data field and a next pointer to the succeeding node.'
+            },
+            {
+              questionText: 'What is the time complexity of inserting a new node at the head of a linked list?',
+              options: ['O(n)', 'O(1)', 'O(log n)', 'O(n^2)'],
+              correctOptionIndex: 1,
+              explanation: 'Inserting at head only requires updating the new node next pointer and reassigning head, taking O(1) constant time.'
+            },
+            {
+              questionText: 'What distinctive advantage does a Doubly Linked List have over a Singly Linked List?',
               options: [
-                'Every node must have exactly two children',
-                'Left subtree keys < Node key < Right subtree keys',
-                'All leaf nodes must be at the identical level',
-                'The tree must be complete and filled from left to right'
+                'It uses less memory per node',
+                'It allows bidirectional traversal (both forward and backward)',
+                'It supports constant-time random access by index',
+                'It does not require null termination'
               ],
               correctOptionIndex: 1,
-              explanation: 'In a BST, all keys in the left subtree are smaller than the node, and all keys in the right subtree are greater.'
+              explanation: 'With both next and prev pointers, a DLL can be traversed in both directions.'
             },
             {
-              questionText: 'Which tree traversal visits the Root node FIRST, before traversing left and right subtrees?',
-              options: ['Inorder Traversal', 'Preorder Traversal', 'Postorder Traversal', 'Level-order Traversal'],
-              correctOptionIndex: 1,
-              explanation: 'Preorder traversal visits Root first, then Left subtree, then Right subtree.'
-            },
-            {
-              questionText: 'What sequence does an Inorder traversal produce when applied to a Binary Search Tree?',
-              options: [
-                'Descending order keys',
-                'Sorted ascending order keys',
-                'Reverse postorder sequence',
-                'Random unordered keys'
-              ],
-              correctOptionIndex: 1,
-              explanation: 'Inorder traversal (Left, Root, Right) on a BST yields keys in strictly ascending sorted order.'
-            },
-            {
-              questionText: 'What is the worst-case search time complexity in a degenerate (skewed) Binary Search Tree?',
-              options: ['O(1)', 'O(log n)', 'O(n)', 'O(n log n)'],
+              questionText: 'In a Circular Singly Linked List, where does the last node point to?',
+              options: ['NULL', 'The previous node', 'The first (head) node', 'A random memory location'],
               correctOptionIndex: 2,
-              explanation: 'A skewed BST degenerates into a linked list, degrading search time to O(n).'
+              explanation: 'In a circular linked list, the final node wraps around to point to the head node.'
             },
             {
-              questionText: 'When representing a sparse graph with V vertices and E edges, which representation is more space-efficient?',
-              options: ['Adjacency Matrix (O(V^2))', 'Adjacency List (O(V + E))', 'Incidence Matrix', 'Full Mesh Table'],
-              correctOptionIndex: 1,
-              explanation: 'An adjacency list uses O(V + E) space, which is far more efficient than O(V^2) for sparse graphs.'
-            },
-            {
-              questionText: 'When deleting a BST node with two children, what is typically substituted in its place?',
+              questionText: 'Why can Binary Search NOT be efficiently executed on a standard Singly Linked List in O(log n) time?',
               options: [
-                'The root node of the entire tree',
-                'Its Inorder Successor (smallest node in right subtree) or Inorder Predecessor',
-                'A NULL pointer',
-                'Its deepest left leaf'
+                'Linked lists cannot store sorted values',
+                'Linked lists do not support O(1) random access to middle elements',
+                'Pointers cannot be compared with integers',
+                'Linked list size is fixed at compile time'
               ],
               correctOptionIndex: 1,
-              explanation: 'The inorder successor or predecessor preserves the BST ordering invariant when replacing a two-child node.'
+              explanation: 'Finding the middle of a linked list takes O(n) traversal, eliminating the O(log n) advantage of binary search.'
             },
             {
-              questionText: 'What data structure is used to implement Breadth-First Search (BFS) in a graph?',
-              options: ['Stack', 'Queue', 'Priority Queue', 'Set only'],
+              questionText: 'What is the space complexity overhead per node in a Doubly Linked List on a 64-bit architecture?',
+              options: ['0 extra bytes', '8 bytes (one pointer)', '16 bytes (two pointers: next and prev)', '32 bytes'],
+              correctOptionIndex: 2,
+              explanation: 'Each 64-bit pointer is 8 bytes; storing both next and prev pointers requires 16 bytes of pointer overhead per node.'
+            },
+            {
+              questionText: 'In a Circular Doubly Linked List, what does the prev pointer of the head node point to?',
+              options: ['NULL', 'The tail (last) node', 'The head node itself', 'The second node'],
               correctOptionIndex: 1,
-              explanation: 'BFS uses a FIFO queue to discover vertices level-by-level.'
+              explanation: 'In a circular doubly linked list, the head prev pointer references the tail node, and the tail next pointer references the head node.'
             },
             {
-              questionText: 'What is the time complexity of BFS or DFS on a graph with V vertices and E edges using an Adjacency List?',
-              options: ['O(V * E)', 'O(V + E)', 'O(V^2)', 'O(log(V + E))'],
+              questionText: 'What is the time complexity to delete the last node in a Singly Linked List if only the head pointer is known?',
+              options: ['O(1)', 'O(n)', 'O(log n)', 'O(n^2)'],
               correctOptionIndex: 1,
-              explanation: 'Both BFS and DFS visit every vertex once and inspect every edge once, yielding O(V + E) complexity.'
+              explanation: 'One must traverse the entire list from head to find the second-to-last node, which takes O(n) time.'
             },
             {
-              questionText: 'What is the maximum number of nodes in a binary tree of height h (where a tree with only the root has h = 1)?',
-              options: ['2^h - 1', '2^(h - 1)', '2h', 'h^2'],
+              questionText: 'What is a Header Linked List?',
+              options: [
+                'A linked list stored on an external hard drive header block',
+                'A linked list containing a special dummy node at the beginning that stores metadata or simplifies edge cases',
+                'A list that only permits insertions at the header',
+                'A list with multiple head pointers for concurrency'
+              ],
+              correctOptionIndex: 1,
+              explanation: 'A header linked list always maintains a dummy header node at the start to eliminate special boundary conditions for head insertion/deletion.'
+            },
+            {
+              questionText: 'Which application commonly uses a Doubly Linked List combined with a Hash Map for O(1) operations?',
+              options: ['LRU (Least Recently Used) Cache', 'Depth-First Search', 'Quick Sort recursion stack', 'Binary Heap'],
               correctOptionIndex: 0,
-              explanation: 'A full binary tree of height h has 1 + 2 + 4 + ... + 2^(h-1) = 2^h - 1 nodes.'
-            },
-            {
-              questionText: 'Which graph algorithm can be used to detect whether a directed graph contains a cycle?',
-              options: ['Binary Search', 'DFS with visited and recursion stack tracking', 'Linear Probing', 'Bubble Sort'],
-              correctOptionIndex: 1,
-              explanation: 'DFS tracks back edges via a recursion call stack to detect cycles in directed graphs.'
-            }
-          ]
-        }
-      },
-      {
-        moduleNumber: 6,
-        title: 'Heaps, Hashing and Complexity',
-        slug: 'heaps-hashing-and-complexity',
-        summary: 'Study priority queues using min-heaps and max-heaps, hash tables, hash functions, collision resolution strategies, and comprehensive time and space complexity evaluations.',
-        estimatedMinutes: 24,
-        keyConcepts: ['Min-Heap', 'Max-Heap', 'Heapify', 'Hash Table', 'Hash Collision', 'Chaining vs Open Addressing', 'Complexity Trade-offs'],
-        topics: [
-          {
-            topicNumber: 17,
-            title: 'Min-heaps, Max-heaps and Hash Tables',
-            estimatedMinutes: 12,
-            pdfUrl: '/materials/17_Heaps_and_Hashing.pdf'
-          },
-          {
-            topicNumber: 18,
-            title: 'Time and Space Complexity',
-            estimatedMinutes: 12,
-            pdfUrl: '/materials/18_Time_and_Space_Complexity.pdf'
-          }
-        ],
-        content: `
-# Module 6: Heaps, Hashing and Complexity
-Total: 24 minutes
-
-Heaps provide optimal priority retrieval, while Hash Tables provide average constant-time $O(1)$ lookups. Understanding these structures completes the core data structure toolkit.
-
----
-
-## 17. Min-heaps, Max-heaps and Hash Tables (12 min)
-- **Binary Heap:** A complete binary tree stored compactly in an array without pointer overhead.
-  - Parent of index $i$: $\\lfloor(i - 1) / 2\\rfloor$
-  - Left child: $2i + 1$, Right child: $2i + 2$
-  - **Max-Heap Property:** $\\text{Parent} \\ge \\text{Children}$. Root contains maximum element.
-  - **Min-Heap Property:** $\\text{Parent} \\le \\text{Children}$. Root contains minimum element.
-  - **Heap Operations:**
-    - \`insert(x)\`: Append at end and bubble up ($O(\\log n)$).
-    - \`extractMin()\` / \`extractMax()\`: Swap root with last, remove last, and sift down ($O(\\log n)$).
-    - \`buildHeap\`: Converts unsorted array to heap in $O(n)$ time.
-- **Hash Tables:**
-  - Map keys to bucket indices using a hash function: $\\text{index} = h(\\text{key}) \\pmod M$.
-  - **Collision Resolution:**
-    1. *Separate Chaining:* Each bucket holds a linked list of collided key-value pairs.
-    2. *Open Addressing:* Probing for the next empty slot (Linear Probing, Quadratic Probing, Double Hashing).
-  - Average Case: $O(1)$ insert, lookup, delete. Worst Case (all keys collide): $O(n)$.
-
----
-
-## 18. Time and Space Complexity Summary (12 min)
-
-| Data Structure | Access | Search | Insertion | Deletion | Space Overhead |
-| :--- | :---: | :---: | :---: | :---: | :---: |
-| **Array** | $O(1)$ | $O(n)$ | $O(n)$ | $O(n)$ | Minimal contiguous |
-| **Linked List** | $O(n)$ | $O(n)$ | $O(1)^*$ | $O(1)^*$ | 1-2 pointers/node |
-| **Stack / Queue** | $O(n)$ | $O(n)$ | $O(1)$ | $O(1)$ | Minimal LIFO/FIFO |
-| **BST (Balanced)** | $O(\\log n)$ | $O(\\log n)$ | $O(\\log n)$ | $O(\\log n)$ | 2 pointers/node |
-| **Binary Heap** | $O(1)^\\dagger$ | $O(n)$ | $O(\\log n)$ | $O(\\log n)$ | Array-backed |
-| **Hash Table** | N/A | $O(1)$ avg | $O(1)$ avg | $O(1)$ avg | Table load factor |
-
-$^*$*Insertion/deletion at head/tail with pointer.*
-$^\\dagger$*Peak min/max access.*
-        `,
-        quiz: {
-          title: 'Heaps, Hashing and Complexity Assessment',
-          questions: [
-            {
-              questionText: 'In a Min-Heap, what invariant must be preserved at every node?',
-              options: [
-                'The key of the parent node is less than or equal to the keys of its children',
-                'The key of the parent node is greater than its children',
-                'All left children must be greater than right children',
-                'Every node must have exactly two non-null children'
-              ],
-              correctOptionIndex: 0,
-              explanation: 'In a min-heap, the parent node is always less than or equal to its children, keeping the minimum at the root.'
-            },
-            {
-              questionText: 'For a binary heap element stored at index i in an array, what is the index of its parent?',
-              options: ['2 * i', 'floor((i - 1) / 2)', '2 * i + 1', 'i / 2 + 1'],
-              correctOptionIndex: 1,
-              explanation: 'In zero-indexed array heap representation, the parent of node i is at Math.floor((i - 1) / 2).'
-            },
-            {
-              questionText: 'What is the average-case time complexity of searching a key in a Hash Table with a well-designed hash function?',
-              options: ['O(log n)', 'O(n)', 'O(1)', 'O(n^2)'],
-              correctOptionIndex: 2,
-              explanation: 'With minimal collisions, direct hash index calculation allows O(1) constant-time search on average.'
-            },
-            {
-              questionText: 'How does Separate Chaining resolve hash collisions in a Hash Table?',
-              options: [
-                'By searching linearly for the next vacant slot in the array',
-                'By maintaining a linked list of entries at each table index bucket',
-                'By immediately resizing the table to double its capacity',
-                'By discarding the older entry'
-              ],
-              correctOptionIndex: 1,
-              explanation: 'Separate chaining stores collided entries in a linked list attached to the bucket index.'
-            },
-            {
-              questionText: 'What is the time complexity of building a Binary Heap from an unsorted array of n elements (buildHeap)?',
-              options: ['O(n log n)', 'O(n)', 'O(n^2)', 'O(log n)'],
-              correctOptionIndex: 1,
-              explanation: 'Bottom-up heap construction runs in mathematically proven linear O(n) time.'
-            },
-            {
-              questionText: 'What is the load factor (alpha) of a Hash Table with n stored elements and m table buckets?',
-              options: ['alpha = n * m', 'alpha = n / m', 'alpha = m / n', 'alpha = n - m'],
-              correctOptionIndex: 1,
-              explanation: 'The load factor is defined as alpha = n / m (ratio of stored items to bucket capacity).'
-            },
-            {
-              questionText: 'What is the time complexity of extracting the minimum element from a Min-Heap of n items?',
-              options: ['O(1)', 'O(log n)', 'O(n)', 'O(n log n)'],
-              correctOptionIndex: 1,
-              explanation: 'Extracting min removes the root, places the last leaf at the root, and sift-downs in O(log n) time.'
-            },
-            {
-              questionText: 'What occurs during primary clustering in linear probing collision resolution?',
-              options: [
-                'Hash codes become completely unique',
-                'Long contiguous runs of occupied slots build up, slowing down search and insertion times',
-                'All elements are moved to a binary tree',
-                'Memory is automatically garbage collected'
-              ],
-              correctOptionIndex: 1,
-              explanation: 'Linear probing causes adjacent collisions to merge into long clusters, increasing average probe lengths.'
-            },
-            {
-              questionText: 'Which sorting algorithm uses a Binary Heap to achieve O(n log n) worst-case time with O(1) auxiliary space?',
-              options: ['Merge Sort', 'Quick Sort', 'Heap Sort', 'Radix Sort'],
-              correctOptionIndex: 2,
-              explanation: 'Heap Sort builds a heap and repeatedly extracts root elements in-place using O(1) extra space.'
-            },
-            {
-              questionText: 'Under what condition does hash table search degrade to O(n) worst-case time?',
-              options: [
-                'When the table is empty',
-                'When every single key hashes to the exact same bucket slot',
-                'When all keys are even numbers',
-                'When the load factor is less than 0.5'
-              ],
-              correctOptionIndex: 1,
-              explanation: 'If all keys collide into one bucket, the bucket becomes a linear list of n items, taking O(n) to search.'
+              explanation: 'An LRU Cache implementation combines a doubly linked list with a hash map to achieve O(1) retrieval and O(1) node relocation.'
             }
           ]
         }
@@ -986,7 +333,7 @@ $^\\dagger$*Peak min/max access.*
     durationHours: 0,
     lessonCount: 0,
     image: '/images/SE.png',
-    description: 'Systematic approaches to software design, agile methodologies, requirements engineering, design patterns, testing, and CI/CD pipelines.',
+    description: 'Software development lifecycle, Agile methodologies, requirements engineering, architectural design patterns, software testing, and CI/CD pipelines.',
     order: 3,
     modules: []
   },
@@ -997,7 +344,7 @@ $^\\dagger$*Peak min/max access.*
     durationHours: 0,
     lessonCount: 0,
     image: '/images/OS.png',
-    description: 'Kernel architectures, process management, CPU scheduling, synchronization, deadlocks, virtual memory paging, and file system implementations.',
+    description: 'Process management, thread scheduling, CPU scheduling algorithms, memory management, virtual memory, paging, deadlocks, file systems, and I/O systems.',
     order: 4,
     modules: []
   },
@@ -1025,6 +372,9 @@ $^\\dagger$*Peak min/max access.*
   }
 ];
 
+// ---------------------------------------------------------------------------
+// Seed function
+// ---------------------------------------------------------------------------
 async function seedDatabase() {
   try {
     console.log('[Seed] Starting database seed...');
@@ -1041,79 +391,88 @@ async function seedDatabase() {
           lessonCount: cData.lessonCount,
           image: cData.image,
           description: cData.description,
-          order: cData.order
+          order: cData.order,
+          category: cData.category || 'Master of Computer Applications'
         },
         { upsert: true, new: true, setDefaultsOnInsert: true }
       );
       console.log(`[Seed] Course upserted: ${course.title} (${course.code})`);
 
-      // If course has no modules (materials removed for now), clean up any previously seeded modules and quizzes
-      if (!cData.modules || cData.modules.length === 0) {
-        const existingModules = await Module.find({ courseId: course._id });
-        if (existingModules.length > 0) {
-          const modIds = existingModules.map(m => m._id);
-          await Quiz.deleteMany({ moduleId: { $in: modIds } });
-          await Module.deleteMany({ courseId: course._id });
-          console.log(`  [Seed] Cleaned up existing modules and quizzes for ${course.code} (Materials removed)`);
-        }
-      } else {
-        // First delete any old modules for this course not present in new modules list
-        const newModuleNumbers = cData.modules.map(m => m.moduleNumber);
-        const oldModules = await Module.find({ courseId: course._id, moduleNumber: { $nin: newModuleNumbers } });
-        if (oldModules.length > 0) {
-          const oldIds = oldModules.map(m => m._id);
-          await Quiz.deleteMany({ moduleId: { $in: oldIds } });
-          await Module.deleteMany({ _id: { $in: oldIds } });
-        }
+      if (cData.modules && cData.modules.length) {
+        // Clear old modules & quizzes for this course to prevent duplicates
+        await Module.deleteMany({ courseId: course._id });
+        await Quiz.deleteMany({ courseId: course._id });
 
-        // Upsert each module
         for (const mData of cData.modules) {
-          const { quiz, topics, ...modFields } = mData;
+          const module = await Module.create({
+            courseId: course._id,
+            moduleNumber: mData.moduleNumber,
+            title: mData.title,
+            slug: mData.slug,
+            summary: mData.summary,
+            estimatedMinutes: mData.estimatedMinutes,
+            pdfUrl: mData.pdfUrl,
+            topics: mData.topics,
+            content: mData.content || mData.summary,
+            order: mData.moduleNumber
+          });
+          console.log(`[Seed] Module created: #${module.moduleNumber} ${module.title}`);
 
-          const moduleDoc = await Module.findOneAndUpdate(
-            { courseId: course._id, moduleNumber: mData.moduleNumber },
-            {
-              ...modFields,
-              topics: topics || [],
-              courseId: course._id
-            },
-            { upsert: true, new: true, setDefaultsOnInsert: true }
-          );
-          console.log(`  [Seed] Module upserted: #${moduleDoc.moduleNumber} ${moduleDoc.title}`);
-
-          // Upsert Quiz if provided
-          if (quiz && quiz.questions && quiz.questions.length === 10) {
-            await Quiz.findOneAndUpdate(
-              { courseId: course._id, moduleId: moduleDoc._id },
-              {
-                title: quiz.title,
-                courseId: course._id,
-                moduleId: moduleDoc._id,
-                passingScore: 6,
-                totalQuestions: 10,
-                questions: quiz.questions
-              },
-              { upsert: true, new: true, setDefaultsOnInsert: true }
-            );
-            console.log(`    [Seed] Quiz upserted: 10 questions for module "${moduleDoc.title}"`);
+          if (mData.quiz) {
+            const quiz = await Quiz.create({
+              moduleId: module._id,
+              courseId: course._id,
+              title: mData.quiz.title,
+              passingScore: 6,
+              totalQuestions: mData.quiz.questions.length,
+              questions: mData.quiz.questions
+            });
+            console.log(`[Seed] Quiz created: "${quiz.title}" with ${quiz.questions.length} questions for module "${module.title}"`);
           }
         }
       }
     }
 
+    // Verify user exists and ensure at least one sample study session exists
+    const user = await User.findOne();
+    if (user) {
+      const dsCourse = await Course.findOne({ code: 'DS' });
+      const firstMod = await Module.findOne({ courseId: dsCourse._id, moduleNumber: 1 });
+      if (firstMod) {
+        const existingSession = await StudySession.findOne({ userId: user._id, moduleId: firstMod._id });
+        if (!existingSession) {
+          await StudySession.create({
+            userId: user._id,
+            courseId: dsCourse._id,
+            moduleId: firstMod._id,
+            plannedDurationMinutes: firstMod.estimatedMinutes,
+            actualDurationSeconds: 120,
+            status: 'completed',
+            completed: true,
+            startTime: new Date(Date.now() - 3600000),
+            endTime: new Date()
+          });
+          console.log(`[Seed] Sample study session created for user ${user.name}`);
+        }
+      }
+    }
+
     console.log('[Seed] Database seed completed successfully!');
-  } catch (err) {
-    console.error('[Seed] Error during seeding:', err);
-    process.exit(1);
+    if (require.main === module) {
+      process.exit(0);
+    }
+  } catch (error) {
+    console.error('[Seed] Error seeding database:', error);
+    if (require.main === module) {
+      process.exit(1);
+    }
+    throw error;
   }
 }
 
-// Allow direct CLI execution: node scripts/seed.js
+// Run if executed directly
 if (require.main === module) {
-  seedDatabase().then(() => {
-    console.log('[Seed] Exiting process.');
-    process.exit(0);
-  });
+  seedDatabase();
 }
 
 module.exports = { seedDatabase };

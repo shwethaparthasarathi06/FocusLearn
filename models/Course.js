@@ -39,7 +39,7 @@ const courseSchema = new mongoose.Schema(
     },
     category: {
       type: String,
-      default: 'Computer Science & Engineering'
+      default: 'Master of Computer Applications'
     },
     order: {
       type: Number,

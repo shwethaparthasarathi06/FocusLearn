@@ -2,22 +2,29 @@
 <%- include('../partials/sidebar.html') %>
 
 <%
-    const user = (typeof currentUser !== 'undefined' && currentUser) ? currentUser : null;
-    const greet = (typeof greeting !== 'undefined' && greeting) ? greeting : 'Good Evening';
+    // Safe fallbacks for all variables to ensure 100% crash-free rendering
+    const user = (typeof currentUser !== 'undefined' && currentUser) ? currentUser : { name: 'Student' };
+    const greet = (typeof greeting !== 'undefined' && greeting) ? greeting : 'Good Morning';
     
     const now = new Date();
-    const defaultDateStr = now.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+    const defaultDateStr = now.toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' });
     const defaultDayName = now.toLocaleDateString('en-US', { weekday: 'long' });
     const dateDisplay = (typeof currentDate !== 'undefined' && currentDate && currentDate.dateStr) ? currentDate.dateStr : defaultDateStr;
     const dayDisplay = (typeof currentDate !== 'undefined' && currentDate && currentDate.dayName) ? currentDate.dayName : defaultDayName;
+
+    const currentStreak = typeof streakDays !== 'undefined' ? streakDays : 7;
+    const coursesList = (typeof courseProgressList !== 'undefined' && courseProgressList) ? courseProgressList : [];
+    const goal = (typeof activeGoal !== 'undefined' && activeGoal) ? activeGoal : (coursesList.length > 0 ? coursesList[0] : null);
+    const activities = (typeof recentActivities !== 'undefined' && recentActivities && recentActivities.length > 0) ? recentActivities : [];
+    const dashStats = (typeof stats !== 'undefined' && stats) ? stats : {};
 %>
 
 <div class="main-content">
     <%- include('../partials/flash.html') %>
 
-    <% if (locals.isAuthenticated && user) { %>
-        <!-- Greeting Banner on top when logged in or registered (Image 3) -->
-        <div class="smart-dash-header mb-4">
+    <div class="smart-dash-wrapper">
+        <!-- Top Bar: Greeting & Date/Search -->
+        <div class="smart-dash-header">
             <div class="smart-greeting-box">
                 <h1 class="smart-greeting-title">
                     <%= greet %>, <%= user.name %>! 👋
@@ -36,42 +43,190 @@
                 </div>
             </div>
         </div>
-    <% } %>
 
-    <!-- Student Workspace Dashboard (Image 2) -->
-    <h2 class="courses-title">STUDENT WORKSPACE DASHBOARD</h2>
+        <!-- 4 Pastel Stat Cards -->
+        <div class="smart-stats-row">
+            <!-- Card 1: Courses Completed (Green) -->
+            <div class="smart-stat-pill pill-green">
+                <div class="smart-stat-icon">
+                    <i class="bi bi-check-circle-fill"></i>
+                </div>
+                <div class="smart-stat-body">
+                    <div class="smart-stat-num"><%= dashStats.coursesCompleted || 0 %>/<%= dashStats.totalCourses || coursesList.length || 6 %></div>
+                    <div class="smart-stat-label">Courses Completed</div>
+                </div>
+            </div>
 
-    <div class="stats-grid">
-        <div class="stat-card">
-            <span class="stat-card-title">Enrolled Courses</span>
-            <span class="stat-card-value">6</span>
-            <span class="stat-card-sub">All active curriculum</span>
-        </div>
-        <div class="stat-card">
-            <span class="stat-card-title">Recorded Focus Time</span>
-            <span class="stat-card-value">14.5 hrs</span>
-            <span class="stat-card-sub">32 sessions tracked</span>
-        </div>
-        <div class="stat-card">
-            <span class="stat-card-title">Quizzes Attempted</span>
-            <span class="stat-card-value">12</span>
-            <span class="stat-card-sub">11 passed (&ge; 6/10)</span>
-        </div>
-        <div class="stat-card">
-            <span class="stat-card-title">Average Score</span>
-            <span class="stat-card-value">84%</span>
-            <span class="stat-card-sub">Benchmark achieved</span>
-        </div>
-    </div>
+            <!-- Card 2: Study Time (Blue) -->
+            <div class="smart-stat-pill pill-blue">
+                <div class="smart-stat-icon">
+                    <i class="bi bi-clock-fill"></i>
+                </div>
+                <div class="smart-stat-body">
+                    <div class="smart-stat-num"><%= dashStats.formattedStudyTime || '0h 0m' %></div>
+                    <div class="smart-stat-label">Study Time</div>
+                </div>
+            </div>
 
-    <div class="card-panel">
-        <h3 class="feature-title">Quick Study Launch</h3>
-        <p class="feature-desc">Jump straight back into your latest study modules.</p>
-        <div class="hero-buttons">
-            <a href="/courses/data-structures" class="btn-focus">Continue Learning</a>
-            <a href="/progress" class="btn btn-outline-secondary">View Detailed Analytics</a>
+            <!-- Card 3: Quiz Accuracy (Yellow/Orange) -->
+            <div class="smart-stat-pill pill-yellow">
+                <div class="smart-stat-icon">
+                    <i class="bi bi-bar-chart-fill"></i>
+                </div>
+                <div class="smart-stat-body">
+                    <div class="smart-stat-num"><%= dashStats.averageQuizScore || 0 %>%</div>
+                    <div class="smart-stat-label">Quiz Accuracy</div>
+                </div>
+            </div>
+
+            <!-- Card 4: Current Streak (Purple) -->
+            <div class="smart-stat-pill pill-purple">
+                <div class="smart-stat-icon">
+                    <i class="bi bi-fire"></i>
+                </div>
+                <div class="smart-stat-body">
+                    <div class="smart-stat-num"><%= currentStreak %> Days</div>
+                    <div class="smart-stat-label">Current Streak</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Middle Row: Active Goal Card -->
+        <div class="smart-middle-row">
+            <div class="smart-goal-card">
+                <div class="d-flex align-items-center justify-content-between flex-wrap gap-3">
+                    <div class="smart-goal-header mb-0">
+                        <div class="smart-goal-icon">
+                            <i class="bi bi-bullseye"></i>
+                        </div>
+                        <div>
+                            <div class="smart-goal-tag">Active Goal</div>
+                            <h3 class="smart-goal-title">
+                                Learn <%= (goal && goal.course && goal.course.title) ? goal.course.title : 'Data Structures' %>
+                            </h3>
+                        </div>
+                    </div>
+                    <div class="d-flex align-items-center gap-3">
+                        <span class="fw-bold text-dark fs-5">
+                            <%= goal ? (goal.percentage || 0) : 0 %>%
+                        </span>
+                        <% if (goal && goal.course && goal.course.slug) { %>
+                            <a href="/courses/<%= goal.course.slug %>" class="btn btn-sm btn-primary px-3 rounded-pill">
+                                Continue Course <i class="bi bi-arrow-right ms-1"></i>
+                            </a>
+                        <% } else { %>
+                            <a href="/courses" class="btn btn-sm btn-primary px-3 rounded-pill">
+                                Explore Courses <i class="bi bi-arrow-right ms-1"></i>
+                            </a>
+                        <% } %>
+                    </div>
+                </div>
+                <div class="smart-goal-bar">
+                    <div class="smart-goal-bar-fill" style="width: <%= goal ? (goal.percentage || 0) : 0 %>%;"></div>
+                </div>
+                <div class="d-flex justify-content-between small text-muted mt-1">
+                    <span><%= goal ? (goal.completedModulesCount || 0) : 0 %> of <%= goal ? (goal.totalModulesCount || 0) : 0 %> modules completed</span>
+                    <span><%= (goal && goal.isCompleted) ? 'Goal Completed!' : 'In Progress' %></span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Bottom Row: Learning Map & Recent Activity -->
+        <div class="smart-bottom-row">
+            <!-- Left: Your Learning Map -->
+            <div class="smart-panel-card">
+                <div class="smart-panel-top">
+                    <h3 class="smart-panel-title">Your Learning Map</h3>
+                    <div class="smart-map-legend">
+                        <span><span class="legend-dot dot-strong"></span> Strong</span>
+                        <span><span class="legend-dot dot-medium"></span> Medium</span>
+                        <span><span class="legend-dot dot-weak"></span> Weak</span>
+                    </div>
+                </div>
+
+                <div class="smart-map-grid" id="smart-map-container">
+                    <% if (coursesList && coursesList.length > 0) { %>
+                        <% coursesList.forEach(function(cp) { 
+                            const pct = cp.percentage || 0;
+                            let statusClass = 'fill-weak';
+                            if (pct >= 60) {
+                                statusClass = 'fill-strong';
+                            } else if (pct >= 20) {
+                                statusClass = 'fill-medium';
+                            }
+                            const courseSlug = (cp.course && cp.course.slug) ? cp.course.slug : '';
+                            const courseTitle = (cp.course && cp.course.title) ? cp.course.title : 'Course';
+                            const courseCode = (cp.course && cp.course.code) ? cp.course.code : courseTitle;
+                        %>
+                            <a href="/courses/<%= courseSlug %>" class="smart-map-pill">
+                                <div class="smart-map-pill-name" title="<%= courseTitle %>">
+                                    <%= courseCode %>
+                                </div>
+                                <div>
+                                    <div class="smart-map-pill-bar">
+                                        <div class="smart-map-pill-fill <%= statusClass %>" style="width: <%= Math.max(8, pct) %>%;"></div>
+                                    </div>
+                                    <div class="small text-muted mt-1 text-end" style="font-size: 0.72rem;">
+                                        <%= pct %>%
+                                    </div>
+                                </div>
+                            </a>
+                        <% }); %>
+                    <% } else { %>
+                        <div class="text-muted small py-3 text-center col-12">
+                            No courses enrolled yet. <a href="/courses">Browse curriculum &rarr;</a>
+                        </div>
+                    <% } %>
+                </div>
+            </div>
+
+            <!-- Right: Recent Activity -->
+            <div class="smart-panel-card">
+                <div class="smart-panel-top">
+                    <h3 class="smart-panel-title">Recent Activity</h3>
+                </div>
+
+                <div class="smart-activity-list">
+                    <% if (activities && activities.length > 0) { %>
+                        <% activities.forEach(function(act) { %>
+                            <div class="smart-activity-item">
+                                <div class="smart-activity-icon">
+                                    <i class="bi bi-check-circle-fill"></i>
+                                </div>
+                                <div class="smart-activity-title"><%= act.title %></div>
+                                <div class="smart-activity-time"><%= act.timeStr %></div>
+                            </div>
+                        <% }); %>
+                    <% } else { %>
+                        <div class="smart-activity-item">
+                            <div class="smart-activity-icon">
+                                <i class="bi bi-check-circle-fill"></i>
+                            </div>
+                            <div class="smart-activity-title">Enrolled in Computer Science Curriculum</div>
+                            <div class="smart-activity-time">Today</div>
+                        </div>
+                        <div class="smart-activity-item">
+                            <div class="smart-activity-icon">
+                                <i class="bi bi-check-circle-fill"></i>
+                            </div>
+                            <div class="smart-activity-title">Ready to start your first module</div>
+                            <div class="smart-activity-time">Just now</div>
+                        </div>
+                    <% } %>
+                </div>
+            </div>
         </div>
     </div>
 </div>
+
+<script>
+    function filterCourses(val) {
+        val = (val || '').toLowerCase().trim();
+        document.querySelectorAll('.smart-map-pill').forEach(el => {
+            const text = el.textContent.toLowerCase();
+            el.style.display = text.includes(val) ? '' : 'none';
+        });
+    }
+</script>
 
 <%- include('../partials/footer.html') %>

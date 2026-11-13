@@ -33,53 +33,93 @@
                             <span><i class="bi bi-collection me-1"></i>
                                 <%= modules.length %> Learning Modules
                             </span>
+                            <% if (progress && modules.length> 0) { %>
+                                <span><i class="bi bi-check-circle me-1"></i>
+                                    <%= progress.completedModules.length %>/<%= modules.length %> Completed (<%=
+                                                progress.completionPercentage %>%)
+                                </span>
+                                <% } %>
                         </div>
                     </div>
                 </div>
 
-                <!-- Modules List -->
-                <div class="section-header-row">
-                    <h3 class="modules-heading">
-                        Course Curriculum & Materials (<%= modules.length %> Modules)
-                    </h3>
-                </div>
+                <!-- Progress Card (if logged in and course has modules) -->
+                <% if (progress && modules.length> 0) { %>
+                    <div class="course-progress-card">
+                        <div class="progress-card-header">
+                            <span class="progress-card-title">Your Course Progress</span>
+                            <span class="progress-card-val">
+                                <%= progress.completionPercentage %>%
+                            </span>
+                        </div>
+                        <div class="course-progress-mini progress-mini-bar">
+                            <div class="course-progress-fill" data-progress="<%= progress.completionPercentage %>">
+                            </div>
+                        </div>
+                    </div>
+                    <% } %>
 
-                <% if (modules && modules.length > 0) { %>
-                    <div class="modules-container">
-                        <% modules.forEach(function(mod) { %>
-                            <div class="module-card">
-                                <div class="w-100">
-                                    <div class="d-flex justify-content-between align-items-start gap-3 flex-wrap">
-                                        <div class="module-main-col">
-                                            <div class="module-num-icon">
-                                                <%= mod.moduleNumber %>
-                                            </div>
-                                            <div>
-                                                <div class="module-title-row">
-                                                    <h4 class="module-title">
-                                                        Module <%= mod.moduleNumber %>: <%= mod.title %>
-                                                    </h4>
-                                                    <span class="module-total-badge">
-                                                        <i class="bi bi-clock me-1"></i> Total: <%= mod.estimatedMinutes %> minutes
-                                                    </span>
+                        <!-- Modules List -->
+                        <div class="section-header-row">
+                            <h3 class="modules-heading">
+                                Course Curriculum & Materials (<%= modules.length %> Modules)
+                            </h3>
+                        </div>
+
+                        <% if (modules && modules.length> 0) { %>
+                            <div class="modules-container">
+                                <% modules.forEach(function(mod) { const isCompleted=progress &&
+                                    progress.completedModules.some(m=> m.moduleId.toString() === mod._id.toString());
+                                    %>
+                                    <div class="module-card">
+                                        <div class="w-100">
+                                            <div
+                                                class="d-flex justify-content-between align-items-start gap-3 flex-wrap">
+                                                <div class="module-main-col">
+                                                    <div class="module-num-icon <%= isCompleted ? 'completed' : '' %>">
+                                                        <% if (isCompleted) { %>
+                                                            <i class="bi bi-check-lg"></i>
+                                                            <% } else { %>
+                                                                <%= mod.moduleNumber %>
+                                                                    <% } %>
+                                                    </div>
+                                                    <div>
+                                                        <div class="module-title-row">
+                                                            <h4 class="module-title">
+                                                                Module <%= mod.moduleNumber %>: <%= mod.title %>
+                                                            </h4>
+                                                            <% if (isCompleted) { %>
+                                                                <span
+                                                                    class="badge bg-success badge-completed-mini">Completed</span>
+                                                                <% } %>
+                                                                    <span class="module-total-badge">
+                                                                        <i class="bi bi-clock me-1"></i> Total: <%=
+                                                                            mod.estimatedMinutes %> minutes
+                                                                    </span>
+                                                        </div>
+                                                        <p class="module-summary-text">
+                                                            <%= mod.summary %>
+                                                        </p>
+                                                    </div>
                                                 </div>
-                                                <p class="module-summary-text">
-                                                    <%= mod.summary %>
-                                                </p>
+
                                             </div>
+
+                                            <!-- Module PDF Button -->
+                                            <% if ((mod.topics && mod.topics.length> 0 && mod.topics[0].pdfUrl) ||
+                                                mod.pdfUrl) { %>
+                                                <div class="module-pdf-row">
+                                                    <a href="/study/room/<%= mod._id %>" target="_blank"
+                                                        rel="noopener noreferrer" class="btn-topic-pdf"
+                                                        onclick="window.open(this.href, '_blank'); return false;">
+                                                        <i class="bi bi-file-earmark-pdf me-1"></i> Open Module PDF
+                                                    </a>
+                                                </div>
+                                                <% } %>
                                         </div>
                                     </div>
-
-                                    <!-- Module PDF Button → Study Room with Timer -->
-                                    <div class="module-pdf-row mt-2">
-                                        <a href="/study/room/<%= mod._id %>" class="btn-module-pdf">
-                                            <i class="bi bi-file-earmark-pdf me-1"></i> Open Module PDF
-                                        </a>
-                                    </div>
-                                </div>
+                                    <% }); %>
                             </div>
-                        <% }); %>
-                    </div>
                             <% } else { %>
                                 <!-- Empty State for Courses with Materials Removed -->
                                 <div class="empty-modules-card">

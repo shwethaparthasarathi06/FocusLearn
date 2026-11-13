@@ -7,7 +7,7 @@
                 <!-- Hero / Welcome Banner -->
                 <div class="hero-banner">
                     <span class="hero-tag">Smart Learning Platform</span>
-                    <h1 class="hero-title">Master Computer Science with FocusLearn</h1>
+                    <h1 class="hero-title">Master Computer Application with FocusLearn</h1>
                     <p class="hero-desc">
                         A structured learning environment pairing comprehensive academic modules with an interactive
                         <strong>Study Timer</strong> and <strong>10-Question Mastery Quizzes</strong>.
@@ -16,9 +16,15 @@
                         <a href="/courses" class="btn btn-hero-primary">
                             <i class="bi bi-book-half me-1"></i> Browse Courses
                         </a>
-                        <a href="/auth/register" class="btn btn-hero-secondary">
-                            <i class="bi bi-person-plus me-1"></i> Get Started Free
-                        </a>
+                        <% if (locals.isAuthenticated) { %>
+                            <a href="/dashboard" class="btn btn-hero-secondary">
+                                <i class="bi bi-speedometer2 me-1"></i> Student Dashboard
+                            </a>
+                            <% } else { %>
+                                <a href="/auth/register" class="btn btn-hero-secondary">
+                                    <i class="bi bi-person-plus me-1"></i> Get Started Free
+                                </a>
+                                <% } %>
                     </div>
                 </div>
 

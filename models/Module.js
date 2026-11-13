@@ -59,6 +59,9 @@ const moduleSchema = new mongoose.Schema(
       }
     ],
     topics: [topicSchema],
+    pdfUrl: {
+      type: String
+    },
     order: {
       type: Number,
       default: 1

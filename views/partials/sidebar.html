@@ -35,10 +35,10 @@
             </form>
         <% } else { %>
             <div class="sidebar-auth-group">
-                <a href="/auth/login" class="btn-sidebar-auth text-center <%= (typeof currentPath !== 'undefined' && currentPath === '/auth/login') ? 'btn-sidebar-active' : '' %>">
+                <a href="/auth/login" class="btn-sidebar-auth text-center">
                     <i class="bi bi-box-arrow-in-right me-1"></i> LOGIN
                 </a>
-                <a href="/auth/register" class="btn-sidebar-auth text-center <%= (typeof currentPath !== 'undefined' && currentPath === '/auth/login') ? '' : 'btn-sidebar-register' %>">
+                <a href="/auth/register" class="btn-sidebar-auth text-center btn-sidebar-register">
                     <i class="bi bi-person-plus me-1"></i> REGISTER
                 </a>
             </div>

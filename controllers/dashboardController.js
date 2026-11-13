@@ -95,7 +95,7 @@ exports.getDashboard = async (req, res, next) => {
 
     // Current Date formatting
     const now = new Date();
-    const dateStr = now.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+    const dateStr = now.toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' });
     const dayName = now.toLocaleDateString('en-US', { weekday: 'long' });
 
     // Active Goal Course (first course in progress or first course)
@@ -104,43 +104,45 @@ exports.getDashboard = async (req, res, next) => {
       || null;
 
     // ── Real Date-Based Streak ────────────────────────────────────────────────
-    let streakDays = 0;
-    if (userId) {
-      const userDoc = await User.findById(userId);
-      if (userDoc) {
-        const todayKey = toDateKey(new Date());
-        streakDays = userDoc.streakDays || 0;
+    const userDoc = await User.findById(userId);
+    const todayKey = toDateKey(new Date());
+    let streakDays = userDoc.streakDays || 0;
 
-        if (!userDoc.lastLoginDate) {
-          streakDays = 1;
+    if (!userDoc.lastLoginDate) {
+      // First ever dashboard visit
+      streakDays = 1;
+    } else {
+      const lastKey = toDateKey(userDoc.lastLoginDate);
+      if (lastKey === todayKey) {
+        // Same day — keep streak unchanged (already counted today)
+        streakDays = streakDays || 1;
+      } else {
+        // Check if yesterday
+        const yesterday = new Date();
+        yesterday.setDate(yesterday.getDate() - 1);
+        const yesterdayKey = toDateKey(yesterday);
+
+        if (lastKey === yesterdayKey) {
+          // Consecutive day — increment
+          streakDays += 1;
         } else {
-          const lastKey = toDateKey(userDoc.lastLoginDate);
-          if (lastKey === todayKey) {
-            streakDays = streakDays || 1;
-          } else {
-            const yesterday = new Date();
-            yesterday.setDate(yesterday.getDate() - 1);
-            const yesterdayKey = toDateKey(yesterday);
-
-            if (lastKey === yesterdayKey) {
-              streakDays += 1;
-            } else {
-              streakDays = 1;
-            }
-            await User.findByIdAndUpdate(userId, {
-              streakDays,
-              lastLoginDate: new Date()
-            });
-          }
+          // Skipped a day or more — reset
+          streakDays = 1;
         }
-
-        if (!userDoc.lastLoginDate || toDateKey(userDoc.lastLoginDate) !== todayKey) {
-          await User.findByIdAndUpdate(userId, {
-            streakDays,
-            lastLoginDate: new Date()
-          });
-        }
+        // Persist the updated streak and today as lastLoginDate
+        await User.findByIdAndUpdate(userId, {
+          streakDays,
+          lastLoginDate: new Date()
+        });
       }
+    }
+
+    // Save first-visit or reset update
+    if (!userDoc.lastLoginDate || toDateKey(userDoc.lastLoginDate) !== todayKey) {
+      await User.findByIdAndUpdate(userId, {
+        streakDays,
+        lastLoginDate: new Date()
+      });
     }
     // ─────────────────────────────────────────────────────────────────────────
 

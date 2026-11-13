@@ -1,37 +1,37 @@
 document.addEventListener('DOMContentLoaded', () => {
     // 1. Initial Variables & Durations
     const defaultMins = (typeof MODULE_MINS !== 'undefined' && MODULE_MINS > 0) ? MODULE_MINS : 20;
-    let initialSeconds = (typeof TEST_DURATION !== 'undefined' && TEST_DURATION && TEST_DURATION > 0) 
-        ? parseInt(TEST_DURATION, 10) 
+    let initialSeconds = (typeof TEST_DURATION !== 'undefined' && TEST_DURATION && TEST_DURATION > 0)
+        ? parseInt(TEST_DURATION, 10)
         : (defaultMins * 60);
 
-    let remainingSeconds      = initialSeconds;
-    let timerInterval         = null;
-    let isPaused              = false;
-    let warningTriggered      = false;
+    let remainingSeconds = initialSeconds;
+    let timerInterval = null;
+    let isPaused = false;
+    let warningTriggered = false;
 
     // Break variables
-    let isOnBreak             = false;
+    let isOnBreak = false;
     let breakRemainingSeconds = 300; // 5 minutes = 300 seconds
-    let savedStudySeconds     = remainingSeconds;
+    let savedStudySeconds = remainingSeconds;
 
     // 2. DOM Elements
-    const timerDisplay       = document.getElementById('timer-display');
-    const timerSublabel      = document.getElementById('timer-sublabel');
-    const timerBox           = document.getElementById('timer-box');
-    const progressBar        = document.getElementById('timer-progress-bar');
-    const tenSecWarningCard  = document.getElementById('ten-sec-warning-card');
+    const timerDisplay = document.getElementById('timer-display');
+    const timerSublabel = document.getElementById('timer-sublabel');
+    const timerBox = document.getElementById('timer-box');
+    const progressBar = document.getElementById('timer-progress-bar');
+    const tenSecWarningCard = document.getElementById('ten-sec-warning-card');
     const floatingAlert10sec = document.getElementById('floating-alert-10sec');
     const timerCompletedCard = document.getElementById('timer-completed-card');
-    const btnPause           = document.getElementById('btn-pause');
-    const btnResume          = document.getElementById('btn-resume');
-    const btnReset           = document.getElementById('btn-reset');
-    const btnBreak           = document.getElementById('btn-break');
-    const btnEndBreak        = document.getElementById('btn-end-break');
-    const btnAddExtra10      = document.getElementById('btn-add-extra-10');
-    const startLearningWrap  = document.getElementById('start-learning-wrap');
-    const btnStartLearning   = document.getElementById('btn-start-learning');
-    const btnCancel          = document.getElementById('btn-cancel');
+    const btnPause = document.getElementById('btn-pause');
+    const btnResume = document.getElementById('btn-resume');
+    const btnReset = document.getElementById('btn-reset');
+    const btnBreak = document.getElementById('btn-break');
+    const btnEndBreak = document.getElementById('btn-end-break');
+    const btnAddExtra10 = document.getElementById('btn-add-extra-10');
+    const startLearningWrap = document.getElementById('start-learning-wrap');
+    const btnStartLearning = document.getElementById('btn-start-learning');
+    const btnCancel = document.getElementById('btn-cancel');
 
     // 3. Helper: Format MM:SS
     function formatTime(totalSeconds) {
@@ -78,7 +78,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const breakPct = Math.max(0, Math.min(100, (breakRemainingSeconds / 300) * 100));
             if (progressBar) {
                 progressBar.style.width = breakPct + '%';
-                progressBar.className   = 'progress-bar progress-bar-striped progress-bar-animated bg-info';
+                progressBar.className = 'progress-bar progress-bar-striped progress-bar-animated bg-info';
             }
             if (tenSecWarningCard) tenSecWarningCard.classList.add('d-none');
             if (floatingAlert10sec) floatingAlert10sec.classList.add('d-none');
@@ -94,7 +94,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const pct = Math.max(0, Math.min(100, (remainingSeconds / initialSeconds) * 100));
         if (progressBar) {
             progressBar.style.width = pct + '%';
-            progressBar.className   = 'progress-bar progress-bar-striped progress-bar-animated bg-primary';
+            progressBar.className = 'progress-bar progress-bar-striped progress-bar-animated bg-primary';
         }
 
         // Check if 10 seconds or fewer left (and not yet expired)
@@ -253,11 +253,11 @@ document.addEventListener('DOMContentLoaded', () => {
             btnAddExtra10.classList.remove('disabled');
         }
 
-        // Re-enable complete course button for this study cycle
+        // Re-enable complete module button for this study cycle
         if (btnCompleteCourse) {
             btnCompleteCourse.disabled = false;
             btnCompleteCourse.className = 'btn btn-outline-success w-100 fw-semibold';
-            btnCompleteCourse.innerHTML = '<i class="bi bi-check-circle me-2"></i> Complete Course';
+            btnCompleteCourse.innerHTML = '<i class="bi bi-check-circle me-2"></i> Complete Module';
         }
 
         if (timerCompletedCard) {
@@ -285,7 +285,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // 8. Auto-start on tab load (or display ready-to-redo state if already completed)
-    if (typeof IS_COURSE_COMPLETED !== 'undefined' && IS_COURSE_COMPLETED) {
+    if (typeof IS_MODULE_COMPLETED !== 'undefined' && IS_MODULE_COMPLETED) {
         stopTimerOnCourseCompleted();
         if (timerDisplay) {
             timerDisplay.textContent = formatTime(initialSeconds);
@@ -323,10 +323,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // 11. 5-Min Break Functionality
     function startBreak() {
-        isOnBreak             = true;
-        savedStudySeconds     = remainingSeconds;
+        isOnBreak = true;
+        savedStudySeconds = remainingSeconds;
         breakRemainingSeconds = 300; // 5 mins
-        isPaused              = false;
+        isPaused = false;
 
         if (btnBreak) btnBreak.classList.add('d-none');
         if (btnEndBreak) btnEndBreak.classList.remove('d-none');
@@ -337,7 +337,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function endBreak() {
-        isOnBreak        = false;
+        isOnBreak = false;
         remainingSeconds = savedStudySeconds;
 
         if (btnEndBreak) btnEndBreak.classList.add('d-none');
@@ -394,7 +394,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ minutes: 10 })
-            }).catch(() => {});
+            }).catch(() => { });
         });
     }
 
@@ -411,22 +411,23 @@ document.addEventListener('DOMContentLoaded', () => {
         }).catch(err => console.debug('Session start tracking skipped:', err));
     }
 
-    // 14. Complete Course Functionality
+    // 14. Complete Module Functionality
     const btnCompleteCourse = document.getElementById('btn-complete-course');
     const courseCompletedCard = document.getElementById('course-completed-card');
+    const completedCardText = document.getElementById('completed-card-text');
 
     if (btnCompleteCourse) {
         btnCompleteCourse.addEventListener('click', async () => {
             if (btnCompleteCourse.disabled) return;
-            const confirmed = confirm('Are you sure you want to complete this entire course? This will mark all course modules as finished (100%).');
+            const confirmed = confirm('Are you sure you want to mark this module as completed?');
             if (!confirmed) return;
 
             try {
                 btnCompleteCourse.disabled = true;
                 const originalHtml = btnCompleteCourse.innerHTML;
-                btnCompleteCourse.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span> Completing Course...';
+                btnCompleteCourse.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span> Completing Module...';
 
-                const response = await fetch(`/study/course/${COURSE_ID}/complete`, {
+                const response = await fetch(`/study/module/${MODULE_ID}/complete`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' }
                 });
@@ -435,26 +436,31 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 if (response.ok && data.success) {
                     btnCompleteCourse.className = 'btn btn-success text-white w-100 fw-semibold';
-                    btnCompleteCourse.innerHTML = '<i class="bi bi-check-circle-fill me-2"></i> Course Completed!';
+                    btnCompleteCourse.innerHTML = '<i class="bi bi-check-circle-fill me-2"></i> Module Completed!';
                     btnCompleteCourse.disabled = true;
 
                     // Immediately stop and freeze timer
                     stopTimerOnCourseCompleted();
 
                     if (courseCompletedCard) {
+                        if (completedCardText) {
+                            completedCardText.textContent = data.isCourseCompleted
+                                ? 'All Modules Finished - Course Completed! 🎉'
+                                : `Module Completed! 🎉 (${data.completedModulesCount}/${data.totalModulesCount} Modules Done - ${data.completionPercentage}%)`;
+                        }
                         courseCompletedCard.classList.remove('d-none');
                         courseCompletedCard.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
                     }
                 } else {
-                    alert(data.message || 'Failed to complete course.');
+                    alert(data.message || 'Failed to complete module.');
                     btnCompleteCourse.disabled = false;
                     btnCompleteCourse.innerHTML = originalHtml;
                 }
             } catch (err) {
-                console.error('Error completing course:', err);
-                alert('Network error while completing course. Please try again.');
+                console.error('Error completing module:', err);
+                alert('Network error while completing module. Please try again.');
                 btnCompleteCourse.disabled = false;
-                btnCompleteCourse.innerHTML = '<i class="bi bi-check-circle me-2"></i> Complete Course';
+                btnCompleteCourse.innerHTML = '<i class="bi bi-check-circle me-2"></i> Complete Module';
             }
         });
     }

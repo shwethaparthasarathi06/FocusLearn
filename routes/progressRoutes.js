@@ -3,6 +3,6 @@ const router = express.Router();
 const progressController = require('../controllers/progressController');
 const { ensureAuthenticated } = require('../middleware/auth');
 
-router.get('/', progressController.getProgress);
+router.get('/', ensureAuthenticated, progressController.getProgress);
 
 module.exports = router;

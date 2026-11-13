@@ -1,45 +1,75 @@
 <%- include('../partials/header.html') %>
-<%- include('../partials/sidebar.html') %>
+    <%- include('../partials/sidebar.html') %>
 
-<div class="main-content">
-    <%- include('../partials/flash.html') %>
+        <div class="main-content">
+            <%- include('../partials/flash.html') %>
 
-    <div class="courses-header-bar">
-        <h2 class="courses-heading">OUR COURSES(<%= courses.length %>)</h2>
-        <span class="courses-subheading">Select a course to view modules and study material</span>
-    </div>
-
-    <div class="grid">
-        <% courses.forEach(function(course) { %>
-            <div class="course-box">
-                <div class="course-top">
-                    <img src="<%= course.image %>" alt="<%= course.title %>" class="course-img-sm">
-                    <h3><%= course.title.toUpperCase() %></h3>
+                <div class="courses-header-bar">
+                    <h2 class="courses-heading">OUR COURSES(<%= courses.length %>)</h2>
+                    <span class="courses-subheading">Select a course to view modules and study material</span>
                 </div>
-                <div class="course-info">
-                    <h4><%= course.title.toUpperCase() %> COURSES</h4>
 
-                    <% if (course.lessonCount > 0) { %>
-                        <div class="course-duration">
-                            <span><i class="bi bi-clock"></i> <%= course.durationHours %> hrs</span>
-                            <span><%= course.lessonCount %> lessons (6 Modules)</span>
-                        </div>
+                <div class="grid">
+                    <% courses.forEach(function(course) { %>
+                        <div class="course-box">
+                            <div class="course-top">
+                                <img src="<%= course.image %>" alt="<%= course.title %>" class="course-img-sm">
+                                <h3>
+                                    <%= course.title.toUpperCase() %>
+                                </h3>
+                            </div>
+                            <div class="course-info">
+                                <h4>
+                                    <%= course.title.toUpperCase() %> COURSES
+                                </h4>
 
-                        <div class="course-button-row">
-                            <a href="/courses/<%= course.slug %>" class="btn-focus btn-course-main">Start Learning</a>
+                                <% if (course.lessonCount> 0) { %>
+                                    <div class="course-duration">
+                                        <span><i class="bi bi-clock"></i>
+                                            <%= course.durationHours %> hrs
+                                        </span>
+                                        <span><i class="bi bi-layers"></i>
+                                            <%= course.lessonCount %> Modules
+                                        </span>
+                                    </div>
+
+                                    <% if (locals.userProgress && userProgress[course._id.toString()] &&
+                                        userProgress[course._id.toString()].completionPercentage> 0) {
+                                        const prog = userProgress[course._id.toString()];
+                                        %>
+                                        <div class="course-progress-box">
+                                            <div class="course-progress-label-row">
+                                                <span>Progress</span>
+                                                <span>
+                                                    <%= prog.completionPercentage %>%
+                                                </span>
+                                            </div>
+                                            <div class="course-progress-mini">
+                                                <div class="course-progress-fill"
+                                                    data-progress="<%= prog.completionPercentage %>"></div>
+                                            </div>
+                                        </div>
+                                        <% } %>
+
+                                            <div class="course-button-row">
+                                                <a href="/courses/<%= course.slug %>" class="btn-focus btn-course-main">
+                                                    <%= (locals.userProgress && userProgress[course._id.toString()] &&
+                                                        userProgress[course._id.toString()].completionPercentage> 0) ?
+                                                        'Continue Learning' : 'Start Learning' %>
+                                                </a>
+                                            </div>
+                                            <% } else { %>
+                                                <div class="course-duration">
+                                                </div><br>
+                                                <div class="course-button-row">
+                                                    <button class="btn-course-disabled" disabled>Start Learning</button>
+                                                </div>
+                                                <% } %>
+                            </div>
                         </div>
-                    <% } else { %>
-                        <div class="course-duration">
-                        </div><br>
-                        <div class="course-button-row">
-                            <button class="btn-course-disabled" disabled>Start Learning</button>
-                        </div>
-                    <% } %>
+                        <% }); %>
                 </div>
-            </div>
-        <% }); %>
-    </div>
 
-</div>
+        </div>
 
-<%- include('../partials/footer.html') %>
+        <%- include('../partials/footer.html') %>
