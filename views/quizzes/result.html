@@ -16,7 +16,7 @@
                 <i class="bi bi-patch-check-fill me-1"></i> Assessment Passed!
             </h2>
             <p class="result-desc-text">
-                Congratulations! You met the passing standard of 6/10.
+                Wonderful work! Your effort paid off. You met the passing score. Keep learning and growing!
             </p>
             <!-- Only Course Overview for passed -->
             <div class="result-actions-row">
@@ -29,7 +29,7 @@
                 <i class="bi bi-exclamation-octagon-fill me-1"></i> Revision Recommended
             </h2>
             <p class="result-desc-text">
-                You scored <%= attempt.score %>/10 (Passing threshold is 6/10). Don't worry! Consistent review and focused practice lead to mastery.
+                Thank you for giving this quiz your best effort! You scored <%= attempt.score %>/10. Review the answers, practise a little more, and try again — every attempt helps you improve.
             </p>
             <!-- Redo Course button for failed -->
             <div class="result-actions-row">
@@ -43,5 +43,7 @@
         <% } %>
     </div>
 </div>
+
+<%- include('../partials/materials-list.html') %>
 
 <%- include('../partials/footer.html') %>

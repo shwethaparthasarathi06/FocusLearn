@@ -119,24 +119,41 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // 6. Handle Completion -> Close Tab Automatically
-    function onTimerComplete() {
+    // 6. Timer completion automatically opens the topic quiz.
+    let quizRedirectStarted = false;
+    async function openTopicQuiz() {
+        if (quizRedirectStarted) return;
+        quizRedirectStarted = true;
         if (timerInterval) clearInterval(timerInterval);
-
         if (timerDisplay) timerDisplay.textContent = '00:00';
         if (progressBar) progressBar.style.width = '0%';
         if (tenSecWarningCard) tenSecWarningCard.classList.add('d-none');
         if (floatingAlert10sec) floatingAlert10sec.classList.add('d-none');
-        if (timerCompletedCard) timerCompletedCard.classList.remove('d-none');
+        if (timerCompletedCard) {
+            timerCompletedCard.classList.remove('d-none');
+            const message = timerCompletedCard.querySelector('p');
+            if (message) message.textContent = 'Your study time is complete. Opening your topic quiz...';
+        }
+        try {
+            const response = await fetch(`/study/module/${MODULE_ID}/quiz-ready`, {
+                method: 'POST', headers: { 'Content-Type': 'application/json' }
+            });
+            const data = await response.json();
+            if (response.ok && data.success && data.redirectUrl) {
+                window.location.href = data.redirectUrl;
+                return;
+            }
+            quizRedirectStarted = false;
+            alert(data.message || 'Quiz is not available yet. Please contact your admin.');
+            if (timerCompletedCard) timerCompletedCard.classList.remove('d-none');
+        } catch (error) {
+            quizRedirectStarted = false;
+            alert('Could not open the quiz. Please check your connection and try again.');
+        }
+    }
 
-        // Close this tab automatically
-        console.log('[Timer] Complete! Attempting automatic tab close...');
-        window.close();
-
-        // Retry multiple times in case of browser timing
-        setTimeout(() => { window.close(); }, 300);
-        setTimeout(() => { window.close(); }, 800);
-        setTimeout(() => { window.close(); }, 1500);
+    function onTimerComplete() {
+        openTopicQuiz();
     }
 
     // 7. Tick Function
@@ -411,54 +428,17 @@ document.addEventListener('DOMContentLoaded', () => {
         }).catch(err => console.debug('Session start tracking skipped:', err));
     }
 
-    // 14. Complete Module Functionality
+    // 14. Complete button immediately opens this topic's quiz.
     const btnCompleteCourse = document.getElementById('btn-complete-course');
-    const courseCompletedCard = document.getElementById('course-completed-card');
-    const completedCardText = document.getElementById('completed-card-text');
-
     if (btnCompleteCourse) {
         btnCompleteCourse.addEventListener('click', async () => {
-            if (btnCompleteCourse.disabled) return;
-            const confirmed = confirm('Are you sure you want to mark this module as completed?');
+            if (btnCompleteCourse.disabled || quizRedirectStarted) return;
+            const confirmed = confirm('Finish studying and go to the topic quiz now?');
             if (!confirmed) return;
-
-            try {
-                btnCompleteCourse.disabled = true;
-                const originalHtml = btnCompleteCourse.innerHTML;
-                btnCompleteCourse.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span> Completing Module...';
-
-                const response = await fetch(`/study/module/${MODULE_ID}/complete`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' }
-                });
-
-                const data = await response.json();
-
-                if (response.ok && data.success) {
-                    btnCompleteCourse.className = 'btn btn-success text-white w-100 fw-semibold';
-                    btnCompleteCourse.innerHTML = '<i class="bi bi-check-circle-fill me-2"></i> Module Completed!';
-                    btnCompleteCourse.disabled = true;
-
-                    // Immediately stop and freeze timer
-                    stopTimerOnCourseCompleted();
-
-                    if (courseCompletedCard) {
-                        if (completedCardText) {
-                            completedCardText.textContent = data.isCourseCompleted
-                                ? 'All Modules Finished - Course Completed! 🎉'
-                                : `Module Completed! 🎉 (${data.completedModulesCount}/${data.totalModulesCount} Modules Done - ${data.completionPercentage}%)`;
-                        }
-                        courseCompletedCard.classList.remove('d-none');
-                        courseCompletedCard.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-                    }
-                } else {
-                    alert(data.message || 'Failed to complete module.');
-                    btnCompleteCourse.disabled = false;
-                    btnCompleteCourse.innerHTML = originalHtml;
-                }
-            } catch (err) {
-                console.error('Error completing module:', err);
-                alert('Network error while completing module. Please try again.');
+            btnCompleteCourse.disabled = true;
+            btnCompleteCourse.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> Opening Quiz...';
+            await openTopicQuiz();
+            if (!quizRedirectStarted) {
                 btnCompleteCourse.disabled = false;
                 btnCompleteCourse.innerHTML = '<i class="bi bi-check-circle me-2"></i> Complete Module';
             }

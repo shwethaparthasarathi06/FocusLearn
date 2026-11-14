@@ -1,11 +1,22 @@
+
 const User = require('../models/User');
+
+/**
+ * Initialize flash storage after session regeneration
+ */
+const initializeFlash = (req) => {
+  req.session.flash = {
+    success: [],
+    error: []
+  };
+};
 
 /**
  * Render Login Page
  */
 exports.getLogin = (req, res) => {
   res.render('auth/login', {
-    pageTitle: 'Student Login - FocusLearn',
+    pageTitle: 'Login - FocusLearn',
     currentPath: '/auth/login',
     email: ''
   });
@@ -18,44 +29,70 @@ exports.postLogin = async (req, res, next) => {
   try {
     const { email, password } = req.body;
 
+    // Validate input
     if (!email || !password) {
       req.flash('error', 'Please provide both email and password.');
+
       return res.status(400).render('auth/login', {
-        pageTitle: 'Student Login - FocusLearn',
+        pageTitle: 'Login - FocusLearn',
         currentPath: '/auth/login',
         email: email || ''
       });
     }
 
+    // Find user
     const normalizedEmail = email.trim().toLowerCase();
-    const user = await User.findOne({ email: normalizedEmail });
+
+    const user = await User.findOne({
+      email: normalizedEmail
+    });
 
     if (!user) {
       req.flash('error', 'Invalid email or password.');
+
       return res.status(401).render('auth/login', {
-        pageTitle: 'Student Login - FocusLearn',
+        pageTitle: 'Login - FocusLearn',
         currentPath: '/auth/login',
         email: normalizedEmail
       });
     }
 
+    // Check password
     const isMatch = await user.comparePassword(password);
+
     if (!isMatch) {
       req.flash('error', 'Invalid email or password.');
+
       return res.status(401).render('auth/login', {
-        pageTitle: 'Student Login - FocusLearn',
+        pageTitle: 'Login - FocusLearn',
         currentPath: '/auth/login',
         email: normalizedEmail
       });
     }
 
-    // Set user session
-    req.session.userId = user._id;
-    req.flash('success', `Welcome back, ${user.name}!`);
+    // Regenerate session for security
+    req.session.regenerate((err) => {
+      if (err) {
+        return next(err);
+      }
 
-    const returnUrl = req.session.returnTo || '/dashboard';
-    delete req.session.returnTo;
-    res.redirect(returnUrl);
+      // Initialize new session
+      initializeFlash(req);
+
+      // Store logged-in user
+      req.session.userId = user._id;
+
+      // Welcome message
+      req.flash('success', `Welcome back, ${user.name}!`);
+
+      // Redirect according to role
+      if (user.role === 'admin') {
+        return res.redirect('/admin');
+      }
+
+      return res.redirect('/dashboard');
+    });
+
   } catch (err) {
     next(err);
   }
@@ -78,11 +115,17 @@ exports.getRegister = (req, res) => {
  */
 exports.postRegister = async (req, res, next) => {
   try {
-    const { name, email, password, confirmPassword } = req.body;
+    const {
+      name,
+      email,
+      password,
+      confirmPassword
+    } = req.body;
 
-    // Basic Validation
+    // Validate required fields
     if (!name || !email || !password || !confirmPassword) {
       req.flash('error', 'All fields are required.');
+
       return res.status(400).render('auth/register', {
         pageTitle: 'Student Registration - FocusLearn',
         currentPath: '/auth/register',
@@ -91,8 +134,10 @@ exports.postRegister = async (req, res, next) => {
       });
     }
 
+    // Validate password length
     if (password.length < 6) {
       req.flash('error', 'Password must be at least 6 characters long.');
+
       return res.status(400).render('auth/register', {
         pageTitle: 'Student Registration - FocusLearn',
         currentPath: '/auth/register',
@@ -101,8 +146,10 @@ exports.postRegister = async (req, res, next) => {
       });
     }
 
+    // Validate password confirmation
     if (password !== confirmPassword) {
       req.flash('error', 'Passwords do not match.');
+
       return res.status(400).render('auth/register', {
         pageTitle: 'Student Registration - FocusLearn',
         currentPath: '/auth/register',
@@ -114,9 +161,16 @@ exports.postRegister = async (req, res, next) => {
     const normalizedEmail = email.trim().toLowerCase();
 
     // Check duplicate email
-    const existing = await User.findOne({ email: normalizedEmail });
+    const existing = await User.findOne({
+      email: normalizedEmail
+    });
+
     if (existing) {
-      req.flash('error', 'An account with this email address already exists. Please log in.');
+      req.flash(
+        'error',
+        'An account with this email address already exists. Please log in.'
+      );
+
       return res.status(400).render('auth/register', {
         pageTitle: 'Student Registration - FocusLearn',
         currentPath: '/auth/register',
@@ -125,19 +179,36 @@ exports.postRegister = async (req, res, next) => {
       });
     }
 
-    // Create user
+    // Create student account
     const newUser = new User({
       name: name.trim(),
       email: normalizedEmail,
-      passwordHash: password
+      passwordHash: password,
+      role: 'student'
     });
 
     await newUser.save();
 
-    // Auto-login after registration
-    req.session.userId = newUser._id;
-    req.flash('success', `Account created successfully! Welcome to FocusLearn, ${newUser.name}.`);
-    res.redirect('/dashboard');
+    // Regenerate session
+    req.session.regenerate((err) => {
+      if (err) {
+        return next(err);
+      }
+
+      // Initialize new flash storage
+      initializeFlash(req);
+
+      // Store new student session
+      req.session.userId = newUser._id;
+
+      req.flash(
+        'success',
+        `Account created successfully! Welcome to FocusLearn, ${newUser.name}.`
+      );
+
+      return res.redirect('/dashboard');
+    });
+
   } catch (err) {
     next(err);
   }
@@ -147,11 +218,17 @@ exports.postRegister = async (req, res, next) => {
  * Handle Logout
  */
 exports.postLogout = (req, res) => {
-  req.session.destroy(err => {
+  req.session.destroy((err) => {
     if (err) {
       console.error('Error destroying session:', err);
+
+      return res.status(500).send(
+        'Unable to log out. Please try again.'
+      );
     }
+
     res.clearCookie('connect.sid');
-    res.redirect('/auth/login');
+
+    return res.redirect('/auth/login');
   });
 };

@@ -4,6 +4,7 @@ const StudySession = require('../models/StudySession');
 const QuizAttempt = require('../models/QuizAttempt');
 const StudentProgress = require('../models/StudentProgress');
 const User = require('../models/User');
+const StudyMaterial = require('../models/StudyMaterial');
 
 /**
  * Returns a date string "YYYY-MM-DD" in local time for comparison
@@ -20,7 +21,15 @@ exports.getDashboard = async (req, res, next) => {
   try {
     const userId = req.session.userId;
 
-    const courses = await Course.find().sort({ order: 1 });
+    const courses = await Course.find().sort({ order: 1 }).lean();
+    const publishedMaterials = await StudyMaterial.find({ isPublished: true }).sort({ createdAt: -1 });
+    const materialMap = {};
+    publishedMaterials.forEach(material => {
+      const key = material.courseId.toString();
+      if (!materialMap[key]) materialMap[key] = [];
+      materialMap[key].push(material);
+    });
+    courses.forEach(course => { course.publishedMaterials = materialMap[course._id.toString()] || []; });
     const progressDocs = await StudentProgress.find({ userId });
     const studySessions = await StudySession.find({ userId, status: 'completed' });
     const quizAttempts = await QuizAttempt.find({ userId });

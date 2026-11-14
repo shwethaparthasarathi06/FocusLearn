@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title><%= pageTitle %></title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+  <style>
+    .question-card {
+      border-left: 4px solid #6366f1;
+      background-color: #fff;
+    }
+  </style>
+</head>
+<body class="bg-light">
+
+<nav class="navbar navbar-dark bg-dark px-4">
+  <a class="navbar-brand fw-bold" href="/admin">
+    <i class="bi bi-shield-lock-fill text-warning me-2"></i>FocusLearn Admin
+  </a>
+  <div>
+    <a href="/admin/subjects" class="btn btn-outline-light btn-sm me-2">Courses</a>
+    <a href="/admin/modules" class="btn btn-outline-light btn-sm me-2">Topics</a>
+    <a href="/admin/quizzes" class="btn btn-light btn-sm me-2 fw-semibold">Quizzes</a>
+    <a href="/admin/quiz-results" class="btn btn-outline-light btn-sm me-2">Results</a>
+    <a href="/admin" class="btn btn-outline-light btn-sm">Dashboard</a>
+  </div>
+</nav>
+
+<div class="container py-4">
+  <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+    <div>
+      <h2 class="fw-bold mb-1">Manage 10-Question Topic Quizzes</h2>
+      <p class="text-muted mb-0">Every curriculum topic features an assessment quiz with 10 questions, 4 choices, and instant server-side grading.</p>
+    </div>
+    <a href="/admin/quiz-results" class="btn btn-outline-dark btn-sm">
+      <i class="bi bi-award-fill me-1 text-warning"></i> View Student Scores
+    </a>
+  </div>
+
+  <% if (message) { %>
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+      <i class="bi bi-check-circle-fill me-2"></i><%= message %>
+      <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+  <% } %>
+
+  <% if (error) { %>
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+      <i class="bi bi-exclamation-triangle-fill me-2"></i><%= error %>
+      <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+  <% } %>
+
+  <!-- Add Quiz Card -->
+  <div class="card shadow-sm border-0 p-4 mb-4">
+    <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+      <h5 class="fw-bold text-primary mb-0">
+        <i class="bi bi-patch-question-fill me-2"></i>Create or Update 10-Question Quiz
+      </h5>
+      <button type="button" id="btn-autofill-sample" class="btn btn-outline-primary btn-sm">
+        <i class="bi bi-magic me-1"></i> Fill Sample Questions Template
+      </button>
+    </div>
+
+    <form action="/admin/quizzes" method="POST" id="quiz-builder-form">
+      <div class="row g-3 mb-3">
+        <div class="col-md-6">
+          <label class="form-label fw-semibold">Target Topic / Module <span class="text-danger">*</span></label>
+          <select class="form-select" name="moduleId" id="select-module" required>
+            <option value="">-- Choose Course Topic --</option>
+            <% 
+              // Group modules by course
+              const courseGroup = {};
+              modules.forEach(m => {
+                const cName = m.courseId ? `[${m.courseId.code}] ${m.courseId.title}` : 'Unassigned';
+                if (!courseGroup[cName]) courseGroup[cName] = [];
+                courseGroup[cName].push(m);
+              });
+              Object.keys(courseGroup).forEach(cName => {
+            %>
+              <optgroup label="<%= cName %>">
+                <% courseGroup[cName].forEach(m => { %>
+                  <option value="<%= m._id %>" data-title="<%= m.title %>" <%= (targetModuleId === m._id.toString()) ? 'selected' : '' %>>
+                    Module <%= m.moduleNumber %>: <%= m.title %>
+                  </option>
+                <% }) %>
+              </optgroup>
+            <% }) %>
+          </select>
+        </div>
+
+        <div class="col-md-4">
+          <label class="form-label fw-semibold">Quiz Title</label>
+          <input class="form-control" name="title" id="quiz-title-input" placeholder="e.g. Memory Management Assessment">
+        </div>
+
+        <div class="col-md-2">
+          <label class="form-label fw-semibold">Passing Score (/10)</label>
+          <input type="number" min="1" max="10" value="6" name="passingScore" class="form-control" required>
+        </div>
+      </div>
+
+      <!-- 10 Questions Container -->
+      <h6 class="fw-bold text-secondary mt-4 mb-3 border-bottom pb-2">
+        <i class="bi bi-card-checklist me-1"></i>10 Multiple-Choice Questions (4 Choices each)
+      </h6>
+
+      <div id="questions-wrapper"></div>
+
+      <div class="mt-4">
+        <button class="btn btn-success px-4 py-2 fw-semibold" type="submit">
+          <i class="bi bi-save me-1"></i> Save Complete 10-Question Quiz
+        </button>
+      </div>
+    </form>
+  </div>
+
+  <!-- Existing Quizzes List -->
+  <div class="card shadow-sm border-0 p-4">
+    <h5 class="fw-bold mb-3">
+      <i class="bi bi-list-check me-2 text-secondary"></i>Existing Quizzes (<%= quizzes.length %>)
+    </h5>
+
+    <div class="table-responsive">
+      <table class="table table-hover table-bordered align-middle">
+        <thead class="table-dark">
+          <tr>
+            <th>Course</th>
+            <th>Topic / Module</th>
+            <th>Quiz Title</th>
+            <th style="width: 100px;">Questions</th>
+            <th style="width: 100px;">Pass Score</th>
+            <th style="width: 180px;">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% if (quizzes && quizzes.length > 0) { %>
+            <% quizzes.forEach(q => { %>
+              <tr>
+                <td>
+                  <% if (q.courseId) { %>
+                    <span class="badge bg-primary"><%= q.courseId.code %></span>
+                    <div class="small fw-semibold"><%= q.courseId.title %></div>
+                  <% } else { %>
+                    <span class="badge bg-secondary">Unknown</span>
+                  <% } %>
+                </td>
+                <td>
+                  <% if (q.moduleId) { %>
+                    <div class="fw-bold">Module <%= q.moduleId.moduleNumber %></div>
+                    <div class="small text-muted"><%= q.moduleId.title %></div>
+                  <% } else { %>
+                    <span class="text-muted">Unassigned</span>
+                  <% } %>
+                </td>
+                <td class="fw-bold text-dark"><%= q.title %></td>
+                <td class="text-center">
+                  <span class="badge bg-info text-dark"><%= q.questions.length %> Qs</span>
+                </td>
+                <td class="text-center"><%= q.passingScore || 6 %>/10</td>
+                <td>
+                  <a href="/admin/quizzes/<%= q._id %>/edit" class="btn btn-sm btn-warning me-1">
+                    <i class="bi bi-pencil-square"></i> Edit
+                  </a>
+                  <form method="POST" action="/admin/quizzes/<%= q._id %>?_method=DELETE" class="d-inline"
+                        onsubmit="return confirm('Delete quiz &quot;<%= q.title %>&quot;?')">
+                    <button type="submit" class="btn btn-sm btn-danger">
+                      <i class="bi bi-trash"></i>
+                    </button>
+                  </form>
+                </td>
+              </tr>
+            <% }) %>
+          <% } else { %>
+            <tr>
+              <td colspan="6" class="text-center py-4 text-muted">
+                No quizzes found. Use the builder above to create a 10-question quiz!
+              </td>
+            </tr>
+          <% } %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<script>
+  // Dynamically render 10 question cards
+  const wrapper = document.getElementById('questions-wrapper');
+  const modSelect = document.getElementById('select-module');
+  const titleInput = document.getElementById('quiz-title-input');
+
+  modSelect.addEventListener('change', () => {
+    const selectedOption = modSelect.options[modSelect.selectedIndex];
+    if (selectedOption && selectedOption.dataset.title) {
+      if (!titleInput.value || titleInput.value.includes('Assessment')) {
+        titleInput.value = selectedOption.dataset.title + ' Assessment';
+      }
+    }
+  });
+
+  for (let i = 0; i < 10; i++) {
+    const card = document.createElement('div');
+    card.className = 'card shadow-sm border-0 question-card p-3 mb-3';
+    card.innerHTML = `
+      <div class="d-flex justify-content-between align-items-center mb-2">
+        <h6 class="fw-bold text-dark mb-0">Question ${i + 1}</h6>
+        <span class="badge bg-light text-secondary border">1 Mark</span>
+      </div>
+
+      <div class="mb-2">
+        <label class="form-label small fw-semibold">Question Text <span class="text-danger">*</span></label>
+        <input type="text" class="form-control form-control-sm" name="questionText[]" id="q_text_${i}" placeholder="Enter question ${i + 1}..." required>
+      </div>
+
+      <div class="row g-2 mb-2">
+        <div class="col-md-6">
+          <label class="form-label small fw-semibold text-muted">Option 1 <span class="text-danger">*</span></label>
+          <input type="text" class="form-control form-control-sm" name="options_${i}[]" id="q_${i}_opt_0" placeholder="Option 1" required>
+        </div>
+        <div class="col-md-6">
+          <label class="form-label small fw-semibold text-muted">Option 2 <span class="text-danger">*</span></label>
+          <input type="text" class="form-control form-control-sm" name="options_${i}[]" id="q_${i}_opt_1" placeholder="Option 2" required>
+        </div>
+        <div class="col-md-6">
+          <label class="form-label small fw-semibold text-muted">Option 3 <span class="text-danger">*</span></label>
+          <input type="text" class="form-control form-control-sm" name="options_${i}[]" id="q_${i}_opt_2" placeholder="Option 3" required>
+        </div>
+        <div class="col-md-6">
+          <label class="form-label small fw-semibold text-muted">Option 4 <span class="text-danger">*</span></label>
+          <input type="text" class="form-control form-control-sm" name="options_${i}[]" id="q_${i}_opt_3" placeholder="Option 4" required>
+        </div>
+      </div>
+
+      <div class="row g-2">
+        <div class="col-md-4">
+          <label class="form-label small fw-semibold text-success">Correct Option</label>
+          <select class="form-select form-select-sm" name="correctOptionIndex[]" id="q_correct_${i}">
+            <option value="0">Option 1</option>
+            <option value="1">Option 2</option>
+            <option value="2">Option 3</option>
+            <option value="3">Option 4</option>
+          </select>
+        </div>
+        <div class="col-md-8">
+          <label class="form-label small fw-semibold text-muted">Explanation</label>
+          <input type="text" class="form-control form-control-sm" name="explanation[]" id="q_exp_${i}" placeholder="Why this option is correct...">
+        </div>
+      </div>
+    `;
+    wrapper.appendChild(card);
+  }
+
+  // Pre-fill Template helper
+  document.getElementById('btn-autofill-sample').addEventListener('click', () => {
+    const selectedOption = modSelect.options[modSelect.selectedIndex];
+    const topic = (selectedOption && selectedOption.dataset.title) ? selectedOption.dataset.title : 'this topic';
+
+    for (let i = 0; i < 10; i++) {
+      const qText = document.getElementById(`q_text_${i}`);
+      const opt0 = document.getElementById(`q_${i}_opt_0`);
+      const opt1 = document.getElementById(`q_${i}_opt_1`);
+      const opt2 = document.getElementById(`q_${i}_opt_2`);
+      const opt3 = document.getElementById(`q_${i}_opt_3`);
+      const correct = document.getElementById(`q_correct_${i}`);
+      const exp = document.getElementById(`q_exp_${i}`);
+
+      if (!qText.value) {
+        qText.value = `Which of the following statements best describes core concept #${i + 1} regarding ${topic}?`;
+        opt0.value = `It optimizes execution throughput and memory resource utilization for ${topic}.`;
+        opt1.value = `It represents an auxiliary obsolete routine.`;
+        opt2.value = `It forces immediate synchronous execution without queuing.`;
+        opt3.value = `It is deprecated in current curriculum specifications.`;
+        correct.value = "0";
+        exp.value = `Core concept #${i + 1} is designed to optimize execution efficiency and resource usage in ${topic}.`;
+      }
+    }
+  });
+</script>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

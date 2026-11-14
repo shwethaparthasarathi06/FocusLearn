@@ -1,5 +1,6 @@
 const Module = require('../models/Module');
 const Course = require('../models/Course');
+const StudyMaterial = require('../models/StudyMaterial');
 
 /**
  * Render Lesson / Learning Module
@@ -20,6 +21,8 @@ exports.getLesson = async (req, res, next) => {
       return res.redirect('/courses');
     }
 
+    const materials = await StudyMaterial.find({ courseId: course._id, isPublished: true }).populate('moduleId').sort({ createdAt: -1 });
+
     // Find previous and next modules
     const prevModule = await Module.findOne({
       courseId: course._id,
@@ -37,7 +40,8 @@ exports.getLesson = async (req, res, next) => {
       course,
       moduleDoc,
       prevModule,
-      nextModule
+      nextModule,
+      materials
     });
   } catch (err) {
     next(err);

@@ -19,6 +19,7 @@ router.post('/session/:id/complete', studyController.postCompleteSession);
 router.post('/session/:id/cancel', studyController.postCancelSession);
 router.post('/session/cancel-active', studyController.postCancelActiveSession);
 router.post('/module/:moduleId/complete', studyController.postCompleteModule);
+router.post('/module/:moduleId/quiz-ready', studyController.postOpenModuleQuiz);
 router.post('/course/:courseId/complete', studyController.postCompleteCourse);
 
 module.exports = router;
