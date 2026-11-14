@@ -1,0 +1,25 @@
+<div id="study-materials" class="container my-4">
+  <div class="card border-0 shadow-sm p-3">
+    <h4 class="mb-3"><i class="bi bi-journal-bookmark me-2"></i>Study Materials</h4>
+    <% if (materials && materials.length) { %>
+      <div class="row g-3">
+        <% materials.forEach(material => { %>
+          <div class="col-12">
+            <div class="border rounded p-3">
+              <h5 class="mb-1"><%= material.title %></h5>
+              <% if (material.description) { %><p class="text-muted mb-2"><%= material.description %></p><% } %>
+              <% if (material.moduleId && material.moduleId.title) { %><div class="small text-primary mb-2">Topic: <%= material.moduleId.title %><%= material.topicNumber ? ' — Topic ' + material.topicNumber : '' %></div><% } %>
+              <% if (material.materialType === 'Video') { %>
+                <% const ytMatch = material.materialUrl && material.materialUrl.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/|shorts\/))([A-Za-z0-9_-]{11})/); const videoEmbed = material.embedUrl || (ytMatch ? 'https://www.youtube.com/embed/' + ytMatch[1] : null); %>
+                <% if (videoEmbed) { %><div class="ratio ratio-16x9 mb-2"><iframe src="<%= videoEmbed %>" title="<%= material.title %>" allowfullscreen loading="lazy"></iframe></div><% } else { %><a class="btn btn-danger btn-sm" href="<%= material.materialUrl %>" target="_blank" rel="noopener">Watch video</a><% } %>
+              <% } else if (material.materialType === 'PDF' || material.materialType === 'Link') { %>
+                <a class="btn btn-primary btn-sm" href="<%= material.materialUrl %>" target="_blank" rel="noopener"><%= material.materialType === 'PDF' ? 'Open PDF' : 'Open link' %></a>
+              <% } else if (material.materialType === 'Text') { %><div class="bg-light rounded p-3"><%= material.content %></div><% } %>
+              <span class="badge bg-secondary mt-2"><%= material.materialType %></span>
+            </div>
+          </div>
+        <% }) %>
+      </div>
+    <% } else { %><p class="text-muted mb-0">No additional materials have been published for this course yet.</p><% } %>
+  </div>
+</div>

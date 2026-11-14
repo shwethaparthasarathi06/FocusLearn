@@ -93,6 +93,13 @@
                                     <a href="/courses/<%= course.slug %>" class="btn-focus btn-course-action">
                                         Start Learning <i class="bi bi-arrow-right-short"></i>
                                     </a>
+                                    <% if (course.publishedMaterials && course.publishedMaterials.length) { %>
+                                      <div class="small mt-3"><strong>Study materials:</strong>
+                                        <% course.publishedMaterials.slice(0, 3).forEach(material => { %>
+                                          <div class="mt-1"><a href="/courses/<%= course.slug %>#materials"><%= material.title %> (<%= material.materialType %>)</a></div>
+                                        <% }) %>
+                                      </div>
+                                    <% } %>
                                 </div>
                             </div>
                             <% }); %>

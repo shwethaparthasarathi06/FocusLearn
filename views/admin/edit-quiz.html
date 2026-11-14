@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title><%= pageTitle %></title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+  <style>
+    .question-card {
+      border-left: 4px solid #10b981;
+      background-color: #fff;
+    }
+  </style>
+</head>
+<body class="bg-light">
+
+<nav class="navbar navbar-dark bg-dark px-4">
+  <a class="navbar-brand fw-bold" href="/admin">FocusLearn Admin</a>
+  <div>
+    <a href="/admin/quizzes" class="btn btn-outline-light btn-sm me-2">Back to Quizzes</a>
+    <a href="/admin" class="btn btn-outline-light btn-sm">Dashboard</a>
+  </div>
+</nav>
+
+<div class="container py-4">
+  <div class="card shadow-sm border-0 p-4 mb-4" style="max-width: 900px; margin: 0 auto;">
+    <h3 class="fw-bold mb-2">Edit 10-Question Quiz</h3>
+    <p class="text-muted">
+      Course: <strong><%= quiz.courseId ? quiz.courseId.title : '—' %></strong> | 
+      Topic: <strong><%= quiz.moduleId ? quiz.moduleId.title : '—' %></strong>
+    </p>
+
+    <% if (error) { %>
+      <div class="alert alert-danger"><%= error %></div>
+    <% } %>
+
+    <form action="/admin/quizzes/<%= quiz._id %>?_method=PUT" method="POST">
+      <div class="row g-3 mb-4">
+        <div class="col-md-8">
+          <label class="form-label fw-semibold">Quiz Title</label>
+          <input type="text" name="title" class="form-control" value="<%= quiz.title %>" required>
+        </div>
+
+        <div class="col-md-4">
+          <label class="form-label fw-semibold">Passing Score (/10)</label>
+          <input type="number" name="passingScore" class="form-control" value="<%= quiz.passingScore || 6 %>" min="1" max="10" required>
+        </div>
+      </div>
+
+      <h5 class="fw-bold text-secondary mb-3 border-bottom pb-2">Questions & Options</h5>
+
+      <% quiz.questions.forEach((q, idx) => { %>
+        <div class="card shadow-sm border-0 question-card p-3 mb-3">
+          <div class="d-flex justify-content-between align-items-center mb-2">
+            <h6 class="fw-bold text-dark mb-0">Question <%= idx + 1 %></h6>
+            <span class="badge bg-light text-secondary border">1 Mark</span>
+          </div>
+
+          <div class="mb-2">
+            <label class="form-label small fw-semibold">Question Text</label>
+            <input type="text" class="form-control form-control-sm" name="questionText[]" value="<%= q.questionText %>" required>
+          </div>
+
+          <div class="row g-2 mb-2">
+            <% q.options.forEach((opt, optIdx) => { %>
+              <div class="col-md-6">
+                <label class="form-label small fw-semibold text-muted">Option <%= optIdx + 1 %></label>
+                <input type="text" class="form-control form-control-sm" name="options_<%= idx %>[]" value="<%= opt %>" required>
+              </div>
+            <% }) %>
+          </div>
+
+          <div class="row g-2">
+            <div class="col-md-4">
+              <label class="form-label small fw-semibold text-success">Correct Option</label>
+              <select class="form-select form-select-sm" name="correctOptionIndex[]">
+                <option value="0" <%= q.correctOptionIndex === 0 ? 'selected' : '' %>>Option 1</option>
+                <option value="1" <%= q.correctOptionIndex === 1 ? 'selected' : '' %>>Option 2</option>
+                <option value="2" <%= q.correctOptionIndex === 2 ? 'selected' : '' %>>Option 3</option>
+                <option value="3" <%= q.correctOptionIndex === 3 ? 'selected' : '' %>>Option 4</option>
+              </select>
+            </div>
+            <div class="col-md-8">
+              <label class="form-label small fw-semibold text-muted">Explanation</label>
+              <input type="text" class="form-control form-control-sm" name="explanation[]" value="<%= q.explanation || '' %>">
+            </div>
+          </div>
+        </div>
+      <% }) %>
+
+      <div class="mt-4 d-flex gap-2">
+        <button type="submit" class="btn btn-primary px-4 py-2 fw-semibold">
+          <i class="bi bi-save me-1"></i> Update 10-Question Quiz
+        </button>
+        <a href="/admin/quizzes" class="btn btn-secondary px-4 py-2">
+          Cancel
+        </a>
+      </div>
+    </form>
+  </div>
+</div>
+
+</body>
+</html>

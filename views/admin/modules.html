@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title><%= pageTitle %></title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+</head>
+<body class="bg-light">
+
+<nav class="navbar navbar-dark bg-dark px-4">
+  <a class="navbar-brand fw-bold" href="/admin">
+    <i class="bi bi-shield-lock-fill text-warning me-2"></i>FocusLearn Admin
+  </a>
+  <div>
+    <a href="/admin/subjects" class="btn btn-outline-light btn-sm me-2">Courses</a>
+    <a href="/admin/modules" class="btn btn-light btn-sm me-2 fw-semibold">Topics/Modules</a>
+    <a href="/admin/quizzes" class="btn btn-outline-light btn-sm me-2">Quizzes</a>
+    <a href="/admin/materials" class="btn btn-outline-light btn-sm me-2">Materials</a>
+    <a href="/admin" class="btn btn-outline-light btn-sm me-2">Dashboard</a>
+  </div>
+</nav>
+
+<div class="container py-4">
+  <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+    <div>
+      <h2 class="fw-bold mb-1">Manage Course Topics & Modules</h2>
+      <p class="text-muted mb-0">Create new curriculum topics for courses, attach lecture notes, and link 10-question mastery quizzes.</p>
+    </div>
+    <a href="/admin/quizzes" class="btn btn-warning text-dark btn-sm">
+      <i class="bi bi-patch-question-fill me-1"></i> Manage Quizzes
+    </a>
+  </div>
+
+  <% if (message) { %>
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+      <i class="bi bi-check-circle-fill me-2"></i><%= message %>
+      <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+  <% } %>
+
+  <% if (error) { %>
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+      <i class="bi bi-exclamation-triangle-fill me-2"></i><%= error %>
+      <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+  <% } %>
+
+  <!-- Add New Module Card -->
+  <div class="card shadow-sm border-0 p-4 mb-4">
+    <h5 class="fw-bold text-primary mb-3">
+      <i class="bi bi-plus-circle-fill me-2"></i>Add New Topic / Learning Module
+    </h5>
+
+    <form action="/admin/modules" method="POST">
+      <div class="row g-3">
+        <div class="col-md-6">
+          <label class="form-label fw-semibold">Target Course / Subject <span class="text-danger">*</span></label>
+          <select name="courseId" class="form-select" required>
+            <option value="">-- Select Course --</option>
+            <% courses.forEach(course => { %>
+              <option value="<%= course._id %>" <%= (selectedCourseId === course._id.toString()) ? 'selected' : '' %>>
+                [<%= course.code %>] <%= course.title %>
+              </option>
+            <% }) %>
+          </select>
+        </div>
+
+        <div class="col-md-3">
+          <label class="form-label fw-semibold">Module Number</label>
+          <input type="number" name="moduleNumber" class="form-control" placeholder="e.g. 1, 2, 3" min="1">
+          <div class="form-text small">Leave blank to auto-increment.</div>
+        </div>
+
+        <div class="col-md-3">
+          <label class="form-label fw-semibold">Estimated Duration (Mins)</label>
+          <input type="number" name="estimatedMinutes" class="form-control" value="40" min="5" max="300" required>
+        </div>
+
+        <div class="col-md-12">
+          <label class="form-label fw-semibold">Topic / Module Title <span class="text-danger">*</span></label>
+          <input type="text" name="title" class="form-control" placeholder="e.g. Process Synchronization and Deadlocks" required>
+        </div>
+
+        <div class="col-md-12">
+          <label class="form-label fw-semibold">Topic Summary <span class="text-danger">*</span></label>
+          <textarea name="summary" class="form-control" rows="2" placeholder="Brief 1-2 sentence overview shown on course cards and study rooms." required></textarea>
+        </div>
+
+        <div class="col-md-6">
+          <label class="form-label fw-semibold">PDF Material Path or URL</label>
+          <input type="text" name="pdfUrl" class="form-control" placeholder="e.g. /materials/Process_Management.pdf or https://...">
+          <div class="form-text small">Points to a file in <code>public/materials/</code> or an external PDF URL.</div>
+        </div>
+
+        <div class="col-md-6">
+          <label class="form-label fw-semibold">Key Concepts (Comma-separated)</label>
+          <input type="text" name="keyConcepts" class="form-control" placeholder="e.g. Semaphores, Mutex, Race Conditions, Bankers Algorithm">
+        </div>
+
+        <div class="col-md-12">
+          <label class="form-label fw-semibold">Full Reading Content & Lesson Notes</label>
+          <textarea name="content" class="form-control" rows="5" placeholder="Detailed academic notes rendered on the student reading page (/lessons/:id)..."></textarea>
+        </div>
+      </div>
+
+      <div class="mt-4">
+        <button type="submit" class="btn btn-success px-4 py-2 fw-semibold">
+          <i class="bi bi-save me-1"></i> Save Topic & Add to Course
+        </button>
+      </div>
+    </form>
+  </div>
+
+  <!-- Filter & Modules Table Card -->
+  <div class="card shadow-sm border-0 p-4">
+    <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+      <h5 class="fw-bold mb-0">
+        <i class="bi bi-list-check me-2 text-secondary"></i>Existing Topics & Modules (<%= modules.length %>)
+      </h5>
+
+      <!-- Course Filter Form -->
+      <form method="GET" action="/admin/modules" class="d-flex align-items-center gap-2">
+        <label class="small text-muted mb-0 text-nowrap">Filter by Course:</label>
+        <select name="courseId" class="form-select form-select-sm" onchange="this.form.submit()">
+          <option value="">All Courses</option>
+          <% courses.forEach(c => { %>
+            <option value="<%= c._id %>" <%= selectedCourseId === c._id.toString() ? 'selected' : '' %>>
+              <%= c.code %> - <%= c.title %>
+            </option>
+          <% }) %>
+        </select>
+        <% if (selectedCourseId) { %>
+          <a href="/admin/modules" class="btn btn-outline-secondary btn-sm">Clear</a>
+        <% } %>
+      </form>
+    </div>
+
+    <div class="table-responsive">
+      <table class="table table-hover table-bordered align-middle">
+        <thead class="table-dark">
+          <tr>
+            <th style="width: 120px;">Course</th>
+            <th style="width: 70px;">Mod #</th>
+            <th>Topic Title & Summary</th>
+            <th style="width: 100px;">Duration</th>
+            <th style="width: 100px;">Material</th>
+            <th style="width: 160px;">10-Q Quiz</th>
+            <th style="width: 170px;">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% if (modules && modules.length > 0) { %>
+            <% modules.forEach(mod => { %>
+              <tr>
+                <td>
+                  <% if (mod.courseId) { %>
+                    <span class="badge bg-primary"><%= mod.courseId.code %></span>
+                    <div class="small fw-semibold text-truncate" style="max-width: 110px;"><%= mod.courseId.title %></div>
+                  <% } else { %>
+                    <span class="badge bg-secondary">Unknown</span>
+                  <% } %>
+                </td>
+                <td class="text-center fw-bold">#<%= mod.moduleNumber %></td>
+                <td>
+                  <div class="fw-bold text-dark"><%= mod.title %></div>
+                  <div class="small text-muted"><%= mod.summary %></div>
+                  <% if (mod.keyConcepts && mod.keyConcepts.length > 0) { %>
+                    <div class="mt-1">
+                      <% mod.keyConcepts.slice(0, 3).forEach(k => { %>
+                        <span class="badge bg-light text-secondary border me-1 small">#<%= k %></span>
+                      <% }) %>
+                    </div>
+                  <% } %>
+                </td>
+                <td><%= mod.estimatedMinutes %> mins</td>
+                <td>
+                  <% if (mod.pdfUrl) { %>
+                    <a href="<%= mod.pdfUrl %>" target="_blank" class="btn btn-sm btn-outline-danger py-0 px-2">
+                      <i class="bi bi-file-earmark-pdf"></i> PDF
+                    </a>
+                  <% } else { %>
+                    <span class="text-muted small">None</span>
+                  <% } %>
+                </td>
+                <td>
+                  <% if (quizMap[mod._id.toString()]) { %>
+                    <span class="badge bg-success mb-1">
+                      <i class="bi bi-check-circle me-1"></i> Active (10 Q)
+                    </span>
+                    <div>
+                      <a href="/admin/quizzes/<%= quizMap[mod._id.toString()]._id %>/edit" class="small text-decoration-none">
+                        Edit Questions &rarr;
+                      </a>
+                    </div>
+                  <% } else { %>
+                    <a href="/admin/quizzes?moduleId=<%= mod._id %>" class="btn btn-sm btn-outline-warning text-dark py-0 px-2">
+                      <i class="bi bi-plus-circle me-1"></i> Add 10-Q Quiz
+                    </a>
+                  <% } %>
+                </td>
+                <td>
+                  <a href="/admin/modules/<%= mod._id %>/edit" class="btn btn-sm btn-warning me-1">
+                    <i class="bi bi-pencil-square"></i> Edit
+                  </a>
+                  <form action="/admin/modules/<%= mod._id %>?_method=DELETE" method="POST" class="d-inline"
+                        onsubmit="return confirm('Delete topic &quot;<%= mod.title %>&quot; and its associated quiz?')">
+                    <button type="submit" class="btn btn-sm btn-danger">
+                      <i class="bi bi-trash"></i>
+                    </button>
+                  </form>
+                </td>
+              </tr>
+            <% }); %>
+          <% } else { %>
+            <tr>
+              <td colspan="7" class="text-center py-4 text-muted">
+                No topics found for this filter. Use the form above to add a new topic!
+              </td>
+            </tr>
+          <% } %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

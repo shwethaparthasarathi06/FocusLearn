@@ -137,6 +137,18 @@ npm run dev
 
 Open your browser at: **[http://localhost:3000](http://localhost:3000)**
 
+### Step 6: Admin Portal & Content Management
+FocusLearn includes a full administration control suite allowing instructors and administrators to create new courses, author learning modules/topics, build 10-question mastery quizzes, and manage study materials:
+* **Admin Login Route:** `http://localhost:3000/auth/login`
+* **Default Admin Email:** `admin@gmail.com`
+* **Default Admin Password:** `Admin@12345`
+* **Admin Dashboard:** `http://localhost:3000/admin`
+* **Manage Courses:** `http://localhost:3000/admin/subjects`
+* **Manage Topics / Modules:** `http://localhost:3000/admin/modules`
+* **Manage 10-Question Quizzes:** `http://localhost:3000/admin/quizzes`
+* **Manage Study Materials:** `http://localhost:3000/admin/materials`
+* **Create/Promote Admin Account:** `node scripts/createAdmin.js`
+
 ---
 
 ## 5. Running Automated Verification Tests
@@ -269,3 +281,20 @@ Follow this sequence when presenting FocusLearn to your faculty or evaluator:
 * **Port 3000 in use:** Change `PORT=3001` in your `.env` file.
 * **MongoDB connection warning:** If local MongoDB is not running, FocusLearn automatically activates its embedded in-memory MongoDB fallback. No action is required.
 * **Database Reset:** Run `npm run seed` to re-seed curriculum courses and quizzes at any time without creating duplicates.
+
+## Updated Learning Materials and Topic Quiz Workflow
+
+- Admins can manage published/unpublished study materials from `/admin/materials` and associate a resource with a course and optional module/topic number.
+- Published resources are linked from the home page and course catalogue, and are displayed in the course, lesson, study-room, quiz, and quiz-result views.
+- Admins can create or replace a quiz for each module from `/admin/quizzes`. The form enforces 10 questions, four options per question, and one correct option. Correct answers are evaluated on the server and are not sent to the student quiz page.
+- Students can open the quiz using **Complete Module** or automatically when the study countdown reaches zero. A module is recorded as completed after the student passes its quiz.
+- Admins can review attempts, student names, scores, percentages, and pass status at `/admin/quiz-results`.
+- Study duration is read from the module's `estimatedMinutes` value (and the existing optional `duration` query override), rather than being fixed in the quiz workflow.
+
+### Running the updated project on Windows
+
+1. Extract the ZIP and open the `FocusLearn` folder in VS Code.
+2. Create a local `.env` file using `.env.example` as a template. Set your own `MONGODB_URI` and `SESSION_SECRET` values.
+3. Open a terminal in the project folder and run `npm.cmd install`.
+4. Start MongoDB, then run `npm.cmd run dev`.
+5. Open `http://localhost:3000`. Sign in with your existing admin account and use the Admin Dashboard links for materials, quizzes, and results.

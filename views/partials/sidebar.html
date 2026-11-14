@@ -17,6 +17,12 @@
         <i class="bi bi-speedometer2 me-2"></i>DASHBOARD
     </a>
 
+    <% if (locals.isAuthenticated && locals.currentUser && locals.currentUser.role === 'admin') { %>
+        <a href="/admin" class="<%= (typeof currentPath !== 'undefined' && currentPath.startsWith('/admin')) ? 'active' : '' %>" style="border-left-color: #ffc107; color: #ffc107 !important;">
+            <i class="bi bi-shield-lock-fill me-2"></i>ADMIN PANEL
+        </a>
+    <% } %>
+
     <div class="sidebar-bottom">
         <% if (locals.isAuthenticated && locals.currentUser) { %>
             <div class="sidebar-user">

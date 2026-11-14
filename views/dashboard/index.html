@@ -169,6 +169,9 @@
                                     <div class="small text-muted mt-1 text-end" style="font-size: 0.72rem;">
                                         <%= pct %>%
                                     </div>
+                                    <% if (cp.course && cp.course.publishedMaterials && cp.course.publishedMaterials.length) { %>
+                                      <div class="small mt-2 text-muted"><%= cp.course.publishedMaterials.length %> study materials available</div>
+                                    <% } %>
                                 </div>
                             </a>
                         <% }); %>

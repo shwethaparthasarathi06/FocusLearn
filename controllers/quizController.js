@@ -3,6 +3,7 @@ const QuizAttempt = require('../models/QuizAttempt');
 const Module = require('../models/Module');
 const Course = require('../models/Course');
 const StudentProgress = require('../models/StudentProgress');
+const StudyMaterial = require('../models/StudyMaterial');
 
 /**
  * Render Quiz Attempt Page
@@ -19,6 +20,7 @@ exports.getQuiz = async (req, res, next) => {
 
     const course = await Course.findById(moduleDoc.courseId);
     const quiz = await Quiz.findOne({ moduleId: moduleDoc._id });
+    const materials = await StudyMaterial.find({ courseId: moduleDoc.courseId, isPublished: true }).populate('moduleId').sort({ createdAt: -1 });
 
     if (!quiz) {
       req.flash('info', 'Assessment quiz is currently being prepared for this module.');
@@ -37,6 +39,7 @@ exports.getQuiz = async (req, res, next) => {
       currentPath: '/courses',
       course,
       moduleDoc,
+      materials,
       quiz: {
         _id: quiz._id,
         title: quiz.title,
@@ -67,8 +70,8 @@ exports.postSubmitQuiz = async (req, res, next) => {
     const course = await Course.findById(moduleDoc.courseId);
     const quiz = await Quiz.findOne({ moduleId: moduleDoc._id });
 
-    if (!quiz) {
-      req.flash('error', 'Quiz not found.');
+    if (!quiz || quiz.questions.length !== 10 || quiz.questions.some(q => q.options.length !== 4)) {
+      req.flash('error', 'A valid 10-question quiz is not available for this topic.');
       return res.redirect('/courses');
     }
 
@@ -79,6 +82,9 @@ exports.postSubmitQuiz = async (req, res, next) => {
     quiz.questions.forEach((q, idx) => {
       const submittedVal = answers[idx.toString()];
       const selectedOption = (submittedVal !== undefined && submittedVal !== '') ? parseInt(submittedVal, 10) : -1;
+      if (!Number.isInteger(selectedOption) || selectedOption < -1 || selectedOption > 3) {
+        throw new Error('Invalid answer selection received.');
+      }
       const isCorrect = selectedOption === q.correctOptionIndex;
 
       if (isCorrect) score += 1;
@@ -187,6 +193,8 @@ exports.getQuizResult = async (req, res, next) => {
 
     const course = await Course.findById(attempt.courseId);
     const moduleDoc = await Module.findById(attempt.moduleId);
+    const quiz = await Quiz.findById(attempt.quizId);
+    const materials = await StudyMaterial.find({ courseId: attempt.courseId, isPublished: true }).populate('moduleId').sort({ createdAt: -1 });
 
     const attemptHistory = await QuizAttempt.find({
       userId: req.session.userId,
@@ -199,6 +207,8 @@ exports.getQuizResult = async (req, res, next) => {
       attempt,
       course,
       moduleDoc,
+      quiz,
+      materials,
       attemptHistory
     });
   } catch (err) {
@@ -225,6 +235,7 @@ exports.getQuizReview = async (req, res, next) => {
     const quiz = await Quiz.findById(attempt.quizId);
     const course = await Course.findById(attempt.courseId);
     const moduleDoc = await Module.findById(attempt.moduleId);
+    const materials = await StudyMaterial.find({ courseId: attempt.courseId, isPublished: true }).populate('moduleId').sort({ createdAt: -1 });
 
     res.render('quizzes/review', {
       pageTitle: `Quiz Review: Attempt #${attempt.attemptNumber} - FocusLearn`,
@@ -232,7 +243,8 @@ exports.getQuizReview = async (req, res, next) => {
       attempt,
       quiz,
       course,
-      moduleDoc
+      moduleDoc,
+      materials
     });
   } catch (err) {
     next(err);

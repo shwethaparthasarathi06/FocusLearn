@@ -15,6 +15,7 @@ const { attachUser } = require('./middleware/auth');
 const { notFoundHandler, serverErrorHandler } = require('./middleware/errorHandler');
 
 // Route Imports
+const adminRoutes = require('./routes/adminRoutes');
 const authRoutes = require('./routes/authRoutes');
 const courseRoutes = require('./routes/courseRoutes');
 const lessonRoutes = require('./routes/lessonRoutes');
@@ -25,6 +26,7 @@ const progressRoutes = require('./routes/progressRoutes');
 
 // Models
 const Course = require('./models/Course');
+const StudyMaterial = require('./models/StudyMaterial');
 const { seedDatabase } = require('./scripts/seed');
 
 const app = express();
@@ -106,7 +108,15 @@ async function startServer() {
     // Home Page
     app.get('/', async (req, res, next) => {
       try {
-        const courses = await Course.find().sort({ order: 1 });
+        const courses = await Course.find().sort({ order: 1 }).lean();
+        const publishedMaterials = await StudyMaterial.find({ isPublished: true }).sort({ createdAt: -1 });
+        const materialMap = {};
+        publishedMaterials.forEach(material => {
+          const key = material.courseId.toString();
+          if (!materialMap[key]) materialMap[key] = [];
+          materialMap[key].push(material);
+        });
+        courses.forEach(course => { course.publishedMaterials = materialMap[course._id.toString()] || []; });
         res.render('home', {
           pageTitle: 'FocusLearn - Smart Learning Platform',
           currentPath: '/',
@@ -117,6 +127,7 @@ async function startServer() {
       }
     });
 
+    
     app.use('/auth', authRoutes);
     app.use('/courses', courseRoutes);
     app.use('/lessons', lessonRoutes);
@@ -124,6 +135,7 @@ async function startServer() {
     app.use('/quizzes', quizRoutes);
     app.use('/dashboard', dashboardRoutes);
     app.use('/progress', progressRoutes);
+    app.use('/admin', adminRoutes);
 
     // 11. Centralized Error Handlers
     app.use(notFoundHandler);

@@ -2,6 +2,8 @@ const StudySession = require('../models/StudySession');
 const Course = require('../models/Course');
 const Module = require('../models/Module');
 const StudentProgress = require('../models/StudentProgress');
+const Quiz = require('../models/Quiz');
+const StudyMaterial = require('../models/StudyMaterial');
 
 /**
  * Render Study Room Page (PDF + Timer together)
@@ -17,6 +19,7 @@ exports.getStudyRoom = async (req, res, next) => {
 
     const course = await Course.findById(mod.courseId);
     if (!course) return res.status(404).render('error', { message: 'Course not found' });
+    const materials = await StudyMaterial.find({ courseId: course._id, isPublished: true }).populate('moduleId').sort({ createdAt: -1 });
 
     // Get the PDF URL from the first topic or module pdfUrl
     const pdfUrl = (mod.topics && mod.topics.length > 0 && mod.topics[0].pdfUrl) ? mod.topics[0].pdfUrl : (mod.pdfUrl || null);
@@ -45,7 +48,8 @@ exports.getStudyRoom = async (req, res, next) => {
       pdfUrl,
       activeSession,
       testDuration,
-      progress
+      progress,
+      materials
     });
   } catch (err) {
     next(err);
@@ -485,5 +489,41 @@ exports.postCompleteCourse = async (req, res, next) => {
     });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
+  }
+};
+
+
+// Complete the current study session and send the student to this module's quiz.
+// The endpoint is used by both the Complete button and the countdown reaching zero.
+exports.postOpenModuleQuiz = async (req, res) => {
+  try {
+    const moduleDoc = await Module.findById(req.params.moduleId);
+    if (!moduleDoc) return res.status(404).json({ success: false, message: 'Topic not found.' });
+    const quiz = await Quiz.findOne({ moduleId: moduleDoc._id });
+    if (!quiz) return res.status(404).json({ success: false, message: 'The quiz for this topic has not been added by the admin yet.' });
+
+    const activeSession = await StudySession.findOne({
+      userId: req.session.userId,
+      moduleId: moduleDoc._id,
+      status: { $in: ['in-progress', 'paused', 'break'] }
+    });
+    if (activeSession) {
+      const now = new Date();
+      const elapsed = Math.max(0, Math.floor((now - new Date(activeSession.startTime)) / 1000));
+      activeSession.endTime = now;
+      activeSession.actualDurationSeconds = Math.max(0, elapsed - (activeSession.totalPausedSeconds || 0));
+      activeSession.status = 'completed';
+      activeSession.completed = true;
+      await activeSession.save();
+      await StudentProgress.findOneAndUpdate(
+        { userId: req.session.userId, courseId: moduleDoc.courseId },
+        { $inc: { totalStudyTimeSeconds: activeSession.actualDurationSeconds } },
+        { upsert: true, setDefaultsOnInsert: true }
+      );
+    }
+    return res.json({ success: true, redirectUrl: `/quizzes/${moduleDoc._id}` });
+  } catch (err) {
+    console.error('Open quiz error:', err);
+    return res.status(500).json({ success: false, message: 'Unable to open the quiz. Please try again.' });
   }
 };
