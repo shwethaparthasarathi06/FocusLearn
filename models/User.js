@@ -17,9 +17,9 @@ const userSchema = new mongoose.Schema(
       trim: true,
       lowercase: true,
       match: [
-             /^[\w.+-]+@[\w.-]+\.[A-Za-z]{2,}$/,
-            'Please provide a valid email address'
-            ]
+        /^\w+([.-]?\w+)*@\w+([.-]?\w+)*(\.\w{2,10})+$/,
+        'Please provide a valid email address'
+      ]
     },
     passwordHash: {
       type: String,
@@ -38,6 +38,37 @@ const userSchema = new mongoose.Schema(
     lastLoginDate: {
       type: Date,
       default: null
+    },
+    phone: {
+      type: String,
+      trim: true,
+      default: ''
+    },
+    bio: {
+      type: String,
+      trim: true,
+      maxlength: [300, 'Bio cannot exceed 300 characters'],
+      default: ''
+    },
+    department: {
+      type: String,
+      trim: true,
+      default: ''
+    },
+    institution: {
+      type: String,
+      trim: true,
+      default: ''
+    },
+    headline: {
+      type: String,
+      trim: true,
+      default: ''
+    },
+    avatarUrl: {
+      type: String,
+      trim: true,
+      default: ''
     }
   },
   {

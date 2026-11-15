@@ -8,10 +8,10 @@
         <i class="bi bi-house-door me-2"></i>HOME
     </a>
     <a href="/courses" class="<%= (typeof currentPath !== 'undefined' && currentPath.startsWith('/courses')) ? 'active' : '' %>">
-        <i class="bi bi-journal-bookmark me-2"></i>COURSES
+        <i class="bi bi-book me-2"></i>ALL COURSES
     </a>
     <a href="/progress" class="<%= (typeof currentPath !== 'undefined' && currentPath === '/progress') ? 'active' : '' %>">
-        <i class="bi bi-graph-up-arrow me-2"></i>PROGRESS
+        <i class="bi bi-graph-up me-2"></i>MY PROGRESS
     </a>
     <a href="/dashboard" class="<%= (typeof currentPath !== 'undefined' && currentPath === '/dashboard') ? 'active' : '' %>">
         <i class="bi bi-speedometer2 me-2"></i>DASHBOARD
@@ -23,17 +23,35 @@
         </a>
     <% } %>
 
+    <% if (locals.isAuthenticated && locals.currentUser) { %>
+        <div class="sidebar-section-divider">STUDENT PORTAL</div>
+        <a href="/dashboard/profile" class="<%= (typeof currentPath !== 'undefined' && currentPath === '/dashboard/profile') ? 'active' : '' %>">
+            <i class="bi bi-person-circle me-2"></i>MY PROFILE
+        </a>
+        <a href="/quizzes/history" class="<%= (typeof currentPath !== 'undefined' && currentPath.startsWith('/quizzes/history')) ? 'active' : '' %>">
+            <i class="bi bi-clock-history me-2"></i>QUIZ HISTORY
+        </a>
+        <a href="/dashboard/performance" class="<%= (typeof currentPath !== 'undefined' && currentPath === '/dashboard/performance') ? 'active' : '' %>">
+            <i class="bi bi-bar-chart-line me-2"></i>MY PERFORMANCE
+        </a>
+        <a href="/dashboard/change-password" class="<%= (typeof currentPath !== 'undefined' && currentPath === '/dashboard/change-password') ? 'active' : '' %>">
+            <i class="bi bi-shield-lock me-2"></i>CHANGE PASSWORD
+        </a>
+    <% } %>
+
     <div class="sidebar-bottom">
         <% if (locals.isAuthenticated && locals.currentUser) { %>
-            <div class="sidebar-user">
-                <div class="sidebar-avatar">
-                    <%= currentUser.name.charAt(0).toUpperCase() %>
+            <a href="/dashboard/profile" class="sidebar-user-link">
+                <div class="sidebar-user">
+                    <div class="sidebar-avatar">
+                        <%= currentUser.name.charAt(0).toUpperCase() %>
+                    </div>
+                    <div class="sidebar-username">
+                        <div><%= currentUser.name %></div>
+                        <small class="sidebar-email"><%= currentUser.email %></small>
+                    </div>
                 </div>
-                <div class="sidebar-username">
-                    <div><%= currentUser.name %></div>
-                    <small class="sidebar-email"><%= currentUser.email %></small>
-                </div>
-            </div>
+            </a>
             <form action="/auth/logout" method="POST" class="sidebar-logout-form">
                 <button type="submit" class="btn-sidebar-auth btn-sidebar-logout">
                     <i class="bi bi-box-arrow-right me-1"></i> LOGOUT
@@ -41,10 +59,10 @@
             </form>
         <% } else { %>
             <div class="sidebar-auth-group">
-                <a href="/auth/login" class="btn-sidebar-auth text-center">
+                <a href="/auth/login" class="btn-sidebar-auth text-center <%= (typeof currentPath !== 'undefined' && currentPath === '/auth/login') ? 'btn-sidebar-active' : '' %>">
                     <i class="bi bi-box-arrow-in-right me-1"></i> LOGIN
                 </a>
-                <a href="/auth/register" class="btn-sidebar-auth text-center btn-sidebar-register">
+                <a href="/auth/register" class="btn-sidebar-auth text-center <%= (typeof currentPath !== 'undefined' && currentPath === '/auth/login') ? '' : 'btn-sidebar-register' %>">
                     <i class="bi bi-person-plus me-1"></i> REGISTER
                 </a>
             </div>

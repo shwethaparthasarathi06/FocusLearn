@@ -59,7 +59,7 @@ exports.getQuiz = async (req, res, next) => {
 exports.postSubmitQuiz = async (req, res, next) => {
   try {
     const { moduleId } = req.params;
-    const { answers = {} } = req.body;
+    const { answers = {}, timeSpentSeconds = 0 } = req.body;
 
     const moduleDoc = await Module.findById(moduleId);
     if (!moduleDoc) {
@@ -77,6 +77,9 @@ exports.postSubmitQuiz = async (req, res, next) => {
 
     // Authoritative Server-Side Answer Evaluation
     let score = 0;
+    let correctCount = 0;
+    let incorrectCount = 0;
+    let unansweredCount = 0;
     const answerRecords = [];
 
     quiz.questions.forEach((q, idx) => {
@@ -87,15 +90,25 @@ exports.postSubmitQuiz = async (req, res, next) => {
       }
       const isCorrect = selectedOption === q.correctOptionIndex;
 
-      if (isCorrect) score += 1;
+      if (selectedOption === -1) {
+        unansweredCount += 1;
+      } else if (isCorrect) {
+        score += 1;
+        correctCount += 1;
+      } else {
+        incorrectCount += 1;
+      }
 
       answerRecords.push({
         questionIndex: idx,
         questionText: q.questionText,
+        options: q.options || [],
         selectedOption,
+        selectedOptionText: (selectedOption >= 0 && q.options && q.options[selectedOption]) ? q.options[selectedOption] : '',
         correctOption: q.correctOptionIndex,
+        correctOptionText: (q.correctOptionIndex >= 0 && q.options && q.options[q.correctOptionIndex]) ? q.options[q.correctOptionIndex] : '',
         isCorrect,
-        explanation: q.explanation
+        explanation: q.explanation || ''
       });
     });
 
@@ -117,9 +130,14 @@ exports.postSubmitQuiz = async (req, res, next) => {
       attemptNumber: previousAttemptsCount + 1,
       answers: answerRecords,
       score,
+      maxScore: totalQuestions,
+      correctAnswersCount: correctCount,
+      incorrectAnswersCount: incorrectCount,
+      unansweredCount,
       totalQuestions,
       percentage,
-      passed
+      passed,
+      timeSpentSeconds: parseInt(timeSpentSeconds, 10) || 0
     });
 
     await attempt.save();

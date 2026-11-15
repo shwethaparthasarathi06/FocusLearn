@@ -18,8 +18,14 @@
             <p class="result-desc-text">
                 Wonderful work! Your effort paid off. You met the passing score. Keep learning and growing!
             </p>
-            <!-- Only Course Overview for passed -->
+            <!-- Action buttons for passed -->
             <div class="result-actions-row">
+                <a href="/quizzes/history/<%= attempt._id %>" class="btn btn-primary btn-result-action">
+                    <i class="bi bi-file-earmark-text me-1"></i> Review Questions
+                </a>
+                <a href="/quizzes/history" class="btn btn-outline-secondary btn-result-action">
+                    <i class="bi bi-clock-history me-1"></i> Quiz History
+                </a>
                 <a href="/courses/<%= course.slug %>" class="btn btn-outline-secondary btn-result-action">
                     <i class="bi bi-journal-bookmark me-1"></i> Course Overview
                 </a>
@@ -31,10 +37,16 @@
             <p class="result-desc-text">
                 Thank you for giving this quiz your best effort! You scored <%= attempt.score %>/10. Review the answers, practise a little more, and try again — every attempt helps you improve.
             </p>
-            <!-- Redo Course button for failed -->
+            <!-- Action buttons for failed -->
             <div class="result-actions-row">
+                <a href="/quizzes/history/<%= attempt._id %>" class="btn btn-primary btn-result-action">
+                    <i class="bi bi-file-earmark-text me-1"></i> Review Questions
+                </a>
                 <a href="/study/room/<%= moduleDoc._id %>" class="btn-focus btn-result-action">
                     <i class="bi bi-arrow-repeat me-1"></i> Redo Course
+                </a>
+                <a href="/quizzes/history" class="btn btn-outline-secondary btn-result-action">
+                    <i class="bi bi-clock-history me-1"></i> Quiz History
                 </a>
                 <a href="/courses/<%= course.slug %>" class="btn btn-outline-secondary btn-result-action">
                     <i class="bi bi-journal-bookmark me-1"></i> Course Overview

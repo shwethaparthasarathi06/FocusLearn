@@ -1,0 +1,250 @@
+<%- include('../partials/header.html') %>
+<%- include('../partials/sidebar.html') %>
+
+<div class="main-content">
+    <%- include('../partials/flash.html') %>
+
+    <!-- Header & Breadcrumb -->
+    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+        <div>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb mb-1">
+                    <li class="breadcrumb-item"><a href="/dashboard" class="text-decoration-none">Dashboard</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">Quiz History</li>
+                </ol>
+            </nav>
+            <h2 class="courses-title mb-0">My Quiz Attempt History</h2>
+            <p class="text-muted mb-0">Review all your previous assessments, scores, and progress.</p>
+        </div>
+        <div class="d-flex gap-2">
+            <a href="/dashboard/performance" class="btn btn-outline-primary">
+                <i class="bi bi-graph-up me-1"></i> View Performance Chart
+            </a>
+            <a href="/courses" class="btn-focus">
+                <i class="bi bi-plus-circle me-1"></i> Take New Quiz
+            </a>
+        </div>
+    </div>
+
+    <!-- Summary Metrics Cards -->
+    <div class="stats-grid mb-4">
+        <div class="stat-card">
+            <span class="stat-card-title">Total Attempts</span>
+            <span class="stat-card-value"><%= summary.totalAllAttempts %></span>
+            <span class="stat-card-sub">Assessments completed</span>
+        </div>
+        <div class="stat-card">
+            <span class="stat-card-title">Passed Quizzes</span>
+            <span class="stat-card-value text-success"><%= summary.totalPassedAll %></span>
+            <span class="stat-card-sub"><%= summary.passRate %>% overall pass rate</span>
+        </div>
+        <div class="stat-card">
+            <span class="stat-card-title">Failed / Revisions</span>
+            <span class="stat-card-value text-danger"><%= summary.totalFailedAll %></span>
+            <span class="stat-card-sub">Under 6/10 passing score</span>
+        </div>
+        <div class="stat-card">
+            <span class="stat-card-title">Average Quiz Score</span>
+            <span class="stat-card-value text-primary"><%= summary.overallAvgScore %>%</span>
+            <span class="stat-card-sub">All-time benchmark</span>
+        </div>
+    </div>
+
+    <!-- Filter & Search Toolbar -->
+    <div class="card-panel mb-4 p-3">
+        <form action="/quizzes/history" method="GET" class="row g-2 align-items-center">
+            <div class="col-md-5 col-sm-6">
+                <label for="courseId" class="visually-hidden">Filter by Course</label>
+                <div class="input-group">
+                    <span class="input-group-text bg-white"><i class="bi bi-journal-text"></i></span>
+                    <select class="form-select" id="courseId" name="courseId">
+                        <option value="">All Courses & Subjects</option>
+                        <% if (typeof courses !== 'undefined' && courses) { %>
+                            <% courses.forEach(function(c) { %>
+                                <option value="<%= c._id %>" <%= filters.courseId === c._id.toString() ? 'selected' : '' %>>
+                                    <%= c.code %> - <%= c.title %>
+                                </option>
+                            <% }); %>
+                        <% } %>
+                    </select>
+                </div>
+            </div>
+
+            <div class="col-md-4 col-sm-6">
+                <label for="status" class="visually-hidden">Filter by Status</label>
+                <div class="input-group">
+                    <span class="input-group-text bg-white"><i class="bi bi-funnel"></i></span>
+                    <select class="form-select" id="status" name="status">
+                        <option value="">All Statuses (Passed & Failed)</option>
+                        <option value="passed" <%= filters.status === 'passed' ? 'selected' : '' %>>Passed Only (&ge; 60%)</option>
+                        <option value="failed" <%= filters.status === 'failed' ? 'selected' : '' %>>Failed / Needs Revision (&lt; 60%)</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="col-md-3 col-sm-12 d-flex gap-2">
+                <button type="submit" class="btn btn-primary flex-grow-1">
+                    <i class="bi bi-filter me-1"></i> Filter
+                </button>
+                <% if (filters.courseId || filters.status) { %>
+                    <a href="/quizzes/history" class="btn btn-outline-secondary" title="Reset Filters">
+                        <i class="bi bi-x-circle"></i>
+                    </a>
+                <% } %>
+            </div>
+        </form>
+    </div>
+
+    <!-- Quiz Attempts Table -->
+    <div class="card-panel p-0 overflow-hidden mb-4">
+        <% if (attempts && attempts.length > 0) { %>
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th class="ps-4">Attempt #</th>
+                            <th>Quiz & Subject</th>
+                            <th>Date & Time</th>
+                            <th class="text-center">Questions</th>
+                            <th class="text-center">Correct</th>
+                            <th class="text-center">Incorrect</th>
+                            <th class="text-center">Unanswered</th>
+                            <th class="text-center">Marks</th>
+                            <th class="text-center">Percentage</th>
+                            <th class="text-center">Status</th>
+                            <th class="text-end pe-4">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <% attempts.forEach(function(attempt) { %>
+                            <tr>
+                                <td class="ps-4 fw-bold text-muted">
+                                    #<%= attempt.attemptNumber %>
+                                </td>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <span class="badge bg-secondary-subtle text-secondary me-2"><%= attempt.courseCode %></span>
+                                        <div>
+                                            <div class="fw-semibold text-dark"><%= attempt.quizTitle %></div>
+                                            <small class="text-muted"><%= attempt.courseTitle %> <%= attempt.moduleNumber ? '&bull; Module ' + attempt.moduleNumber : '' %></small>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div><%= attempt.formattedDate %></div>
+                                    <small class="text-muted"><%= attempt.formattedTime %></small>
+                                </td>
+                                <td class="text-center">
+                                    <span class="badge bg-light text-dark border"><%= attempt.totalQuestions %></span>
+                                </td>
+                                <td class="text-center">
+                                    <span class="badge bg-success-subtle text-success fw-bold px-2 py-1">
+                                        <i class="bi bi-check-lg me-1"></i><%= attempt.correctCount %>
+                                    </span>
+                                </td>
+                                <td class="text-center">
+                                    <span class="badge bg-danger-subtle text-danger fw-bold px-2 py-1">
+                                        <i class="bi bi-x-lg me-1"></i><%= attempt.incorrectCount %>
+                                    </span>
+                                </td>
+                                <td class="text-center">
+                                    <% if (attempt.unansweredCount > 0) { %>
+                                        <span class="badge bg-warning-subtle text-warning-emphasis fw-bold px-2 py-1">
+                                            <%= attempt.unansweredCount %>
+                                        </span>
+                                    <% } else { %>
+                                        <span class="text-muted small">0</span>
+                                    <% } %>
+                                </td>
+                                <td class="text-center">
+                                    <strong><%= attempt.score %></strong> <span class="text-muted">/ <%= attempt.maxScore %></span>
+                                </td>
+                                <td class="text-center">
+                                    <span class="fw-bold <%= attempt.passed ? 'text-success' : 'text-danger' %>">
+                                        <%= attempt.percentage %>%
+                                    </span>
+                                </td>
+                                <td class="text-center">
+                                    <% if (attempt.passed) { %>
+                                        <span class="badge bg-success">
+                                            <i class="bi bi-patch-check-fill me-1"></i>Passed
+                                        </span>
+                                    <% } else { %>
+                                        <span class="badge bg-danger">
+                                            <i class="bi bi-x-octagon-fill me-1"></i>Failed
+                                        </span>
+                                    <% } %>
+                                </td>
+                                <td class="text-end pe-4">
+                                    <a href="/quizzes/history/<%= attempt._id %>" class="btn btn-sm btn-outline-primary fw-semibold">
+                                        View Details <i class="bi bi-arrow-right ms-1"></i>
+                                    </a>
+                                </td>
+                            </tr>
+                        <% }); %>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Pagination Bar -->
+            <% if (totalPages > 1) { %>
+                <div class="d-flex justify-content-between align-items-center p-3 border-top flex-wrap gap-2">
+                    <div class="small text-muted">
+                        Showing attempt <%= (page - 1) * limit + 1 %> to <%= Math.min(page * limit, totalAttempts) %> of <%= totalAttempts %> attempts
+                    </div>
+                    <nav aria-label="Quiz history pagination">
+                        <ul class="pagination pagination-sm mb-0">
+                            <li class="page-item <%= page <= 1 ? 'disabled' : '' %>">
+                                <a class="page-link" href="/quizzes/history?page=<%= page - 1 %>&courseId=<%= filters.courseId %>&status=<%= filters.status %>" aria-label="Previous">
+                                    <span aria-hidden="true">&laquo; Prev</span>
+                                </a>
+                            </li>
+
+                            <% for (let i = 1; i <= totalPages; i++) { %>
+                                <li class="page-item <%= page === i ? 'active' : '' %>">
+                                    <a class="page-link" href="/quizzes/history?page=<%= i %>&courseId=<%= filters.courseId %>&status=<%= filters.status %>">
+                                        <%= i %>
+                                    </a>
+                                </li>
+                            <% } %>
+
+                            <li class="page-item <%= page >= totalPages ? 'disabled' : '' %>">
+                                <a class="page-link" href="/quizzes/history?page=<%= page + 1 %>&courseId=<%= filters.courseId %>&status=<%= filters.status %>" aria-label="Next">
+                                    <span aria-hidden="true">Next &raquo;</span>
+                                </a>
+                            </li>
+                        </ul>
+                    </nav>
+                </div>
+            <% } %>
+
+        <% } else { %>
+            <!-- Empty State -->
+            <div class="text-center py-5">
+                <div class="feature-icon-circle mx-auto mb-3 text-secondary">
+                    <i class="bi bi-clipboard-x fs-1"></i>
+                </div>
+                <h4 class="fw-bold mb-2">No Quiz Attempts Found</h4>
+                <p class="text-muted mb-4 max-w-md mx-auto">
+                    <% if (filters.courseId || filters.status) { %>
+                        No attempts match your active filter criteria. Try clearing filters to view all attempts.
+                    <% } else { %>
+                        You haven't attempted any quizzes yet. Explore our courses, study module topics, and complete your first quiz!
+                    <% } %>
+                </p>
+                <div class="d-flex justify-content-center gap-2">
+                    <% if (filters.courseId || filters.status) { %>
+                        <a href="/quizzes/history" class="btn btn-outline-secondary">
+                            <i class="bi bi-arrow-clockwise me-1"></i> Clear Filters
+                        </a>
+                    <% } %>
+                    <a href="/courses" class="btn-focus">
+                        <i class="bi bi-journal-bookmark me-1"></i> Browse Courses & Quizzes
+                    </a>
+                </div>
+            </div>
+        <% } %>
+    </div>
+</div>
+
+<%- include('../partials/footer.html') %>
