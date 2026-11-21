@@ -1,43 +1,243 @@
 <%- include('../partials/header.html') %>
-<%- include('../partials/sidebar.html') %>
+    <%- include('../partials/sidebar.html') %>
 
-<div class="main-content">
-    <%- include('../partials/flash.html') %>
+        <div class="main-content">
+            <%- include('../partials/flash.html') %>
 
-    <div class="auth-wrapper">
-        <div class="auth-card">
-            <div class="auth-header">
-                <h2>Welcome Back</h2>
-                <p>Sign in to your FocusLearn student account to continue learning</p>
-            </div>
+                <div class="auth-wrapper">
+                    <div class="auth-card shadow-sm">
+                        <!-- Header matching Reference Design -->
+                        <div class="auth-header text-center">
+                            <span class="auth-tagline text-uppercase fw-bold text-primary small">WELCOME TO
+                                FOCUSLEARN</span>
+                            <h2 class="auth-main-title fw-bold mt-1 mb-1">Sign in to your account</h2>
+                            <p class="auth-subtitle text-muted">Choose your role to continue</p>
+                        </div>
 
-            <form action="/auth/login" method="POST">
-                <div class="mb-3">
-                    <label for="email" class="form-label auth-form-label">Email Address</label>
-                    <div class="input-group">
-                        <span class="input-group-text"><i class="bi bi-envelope"></i></span>
-                        <input type="email" class="form-control" id="email" name="email" value="<%= typeof email !== 'undefined' ? email : '' %>" required placeholder="name@gmail.com">
+                        <!-- Segmented Role Switcher: Student vs Admin -->
+                        <div class="role-toggle-container mb-4">
+                            <div class="role-toggle-bar">
+                                <button type="button" id="tab-btn-student"
+                                    class="role-toggle-btn <%= (typeof activeRole === 'undefined' || activeRole !== 'admin') ? 'active' : '' %>"
+                                    onclick="switchLoginRole('student')">
+                                    Student
+                                </button>
+                                <button type="button" id="tab-btn-admin"
+                                    class="role-toggle-btn <%= (typeof activeRole !== 'undefined' && activeRole === 'admin') ? 'active' : '' %>"
+                                    onclick="switchLoginRole('admin')">
+                                    Admin
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Client-side Google Error / Status Alerts inside the card -->
+                        <div id="google-auth-alert"></div>
+
+                        <!-- ========================================================= -->
+                        <!-- 1. STUDENT LOGIN SECTION                                   -->
+                        <!-- ========================================================= -->
+                        <div id="student-login-section"
+                            style="<%= (typeof activeRole !== 'undefined' && activeRole === 'admin') ? 'display: none;' : 'display: block;' %>">
+
+                            <!-- Google Identity Services (GIS) Sign-In Button -->
+                            <% if (typeof googleClientId !=='undefined' && googleClientId) { %>
+                                <div class="google-signin-wrapper mb-3">
+                                    <div id="g_id_onload" data-client_id="<%= googleClientId %>" data-context="signin"
+                                        data-ux_mode="popup" data-callback="handleGoogleCredentialResponse"
+                                        data-auto_prompt="false">
+                                    </div>
+                                    <div class="g_id_signin d-flex justify-content-center" data-type="standard"
+                                        data-shape="pill" data-theme="outline" data-text="signin_with" data-size="large"
+                                        data-logo_alignment="left" data-width="380">
+                                    </div>
+                                </div>
+
+                                <!-- Divider -->
+                                <div class="auth-divider">
+                                    <span>OR</span>
+                                </div>
+                                <% } %>
+
+                                    <!-- Student Credentials Form -->
+                                    <form action="/auth/login" method="POST" id="student-form" class="mt-3">
+                                        <input type="hidden" name="role" value="student">
+
+                                        <div class="mb-3">
+                                            <label for="student-email" class="form-label auth-form-label">Email
+                                                Address</label>
+                                            <div class="input-group">
+                                                <span class="input-group-text"><i class="bi bi-envelope"></i></span>
+                                                <input type="email" class="form-control" id="student-email" name="email"
+                                                    value="<%= (typeof activeRole === 'undefined' || activeRole !== 'admin') && typeof email !== 'undefined' ? email : '' %>"
+                                                    required placeholder="26mx101@psgtech.ac.in"
+                                                    pattern="<%= typeof studentEmailPattern !== 'undefined' ? studentEmailPattern : '' %>"
+                                                    title="Only official PSG Tech student emails (26mx101–130, 26mx201–230, 26mx301–360 @psgtech.ac.in) are permitted.">
+                                            </div>
+                                        </div>
+
+                                        <div class="mb-4">
+                                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                                <label for="student-password"
+                                                    class="form-label auth-form-label mb-0">Password</label>
+                                                <a href="/auth/register"
+                                                    class="text-primary small text-decoration-none">Forgot Password?</a>
+                                            </div>
+                                            <div class="input-group">
+                                                <span class="input-group-text"><i class="bi bi-shield-lock"></i></span>
+                                                <input type="password" class="form-control" id="student-password"
+                                                    name="password" required placeholder="Enter your password">
+                                                <button class="btn btn-outline-secondary" type="button"
+                                                    onclick="togglePasswordVisibility('student-password', this)"
+                                                    style="border-color: #ced4da;">
+                                                    <i class="bi bi-eye"></i>
+                                                </button>
+                                            </div>
+                                        </div>
+
+                                        <button type="submit" class="btn btn-hero-primary w-100 py-2">
+                                            <i class="bi bi-box-arrow-in-right me-1"></i> Sign In
+                                        </button>
+                                    </form>
+
+                                    <div class="auth-footer text-center mt-4">
+                                        <p class="text-muted small mb-0">Don't have an account? <a href="/auth/register"
+                                                class="text-primary fw-bold text-decoration-none">Register here</a></p>
+                                    </div>
+                        </div>
+
+                        <!-- ========================================================= -->
+                        <!-- 2. ADMIN LOGIN SECTION                                     -->
+                        <!-- ========================================================= -->
+                        <div id="admin-login-section"
+                            style="<%= (typeof activeRole !== 'undefined' && activeRole === 'admin') ? 'display: block;' : 'display: none;' %>">
+                            <div class="alert alert-light border small text-muted text-center py-2 mb-3">
+                                <i class="bi bi-shield-shaded text-warning me-1 fs-6"></i>
+                                <strong>Administrator Control Portal</strong> &mdash; Faculty & Staff Only
+                            </div>
+
+                            <form action="/auth/login" method="POST" id="admin-form">
+                                <input type="hidden" name="role" value="admin">
+
+                                <div class="mb-3">
+                                    <label for="admin-email" class="form-label auth-form-label">Administrator
+                                        Email</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text"><i class="bi bi-person-badge"></i></span>
+                                        <input type="email" class="form-control" id="admin-email" name="email"
+                                            value="<%= (typeof activeRole !== 'undefined' && activeRole === 'admin') && typeof email !== 'undefined' ? email : '' %>"
+                                            required placeholder="admin@psgtech.ac.in">
+                                    </div>
+                                </div>
+
+                                <div class="mb-4">
+                                    <label for="admin-password" class="form-label auth-form-label">Admin
+                                        Password</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text"><i class="bi bi-shield-lock"></i></span>
+                                        <input type="password" class="form-control" id="admin-password" name="password"
+                                            placeholder="Enter your password">
+                                        <button class="btn btn-outline-secondary" type="button"
+                                            onclick="togglePasswordVisibility('admin-password', this)"
+                                            style="border-color: #ced4da;">
+                                            <i class="bi bi-eye"></i>
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <button type="submit" class="btn btn-warning w-100 py-2 fw-bold text-dark">
+                                    <i class="bi bi-shield-check me-1"></i> Sign In as Administrator
+                                </button>
+                            </form>
+
+                            <div class="auth-footer text-center mt-4">
+                                <p class="text-muted small mb-0">Are you a student? <a href="javascript:void(0)"
+                                        onclick="switchLoginRole('student')"
+                                        class="text-primary fw-bold text-decoration-none">Student Login</a></p>
+                            </div>
+                        </div>
+
                     </div>
                 </div>
-
-                <div class="mb-4">
-                    <label for="password" class="form-label auth-form-label">Password</label>
-                    <div class="input-group">
-                        <span class="input-group-text"><i class="bi bi-shield-lock"></i></span>
-                        <input type="password" class="form-control" id="password" name="password" required placeholder="Enter your password">
-                    </div>
-                </div>
-
-                <button type="submit" class="btn btn-hero-primary w-100 py-2">
-                    <i class="bi bi-box-arrow-in-right me-1"></i> Sign In
-                </button>
-            </form>
-
-            <div class="auth-footer">
-                <p>Don't have an account? <a href="/auth/register">Create one now</a></p>
-            </div>
         </div>
-    </div>
-</div>
 
-<%- include('../partials/footer.html') %>
+        <!-- Official Google Identity Services SDK -->
+        <script src="https://accounts.google.com/gsi/client" async defer></script>
+
+        <script>
+            // Switch between Student and Admin tabs smoothly
+            function switchLoginRole(role) {
+                const studentSection = document.getElementById('student-login-section');
+                const adminSection = document.getElementById('admin-login-section');
+                const studentBtn = document.getElementById('tab-btn-student');
+                const adminBtn = document.getElementById('tab-btn-admin');
+
+                if (role === 'admin') {
+                    studentSection.style.display = 'none';
+                    adminSection.style.display = 'block';
+                    studentBtn.classList.remove('active');
+                    adminBtn.classList.add('active');
+                } else {
+                    studentSection.style.display = 'block';
+                    adminSection.style.display = 'none';
+                    adminBtn.classList.remove('active');
+                    studentBtn.classList.add('active');
+                }
+            }
+
+            // Google Identity Services Credential Handler
+            function handleGoogleCredentialResponse(response) {
+                const alertBox = document.getElementById('google-auth-alert');
+                if (!response || !response.credential) {
+                    alertBox.innerHTML = '<div class="alert alert-danger py-2 small mb-3"><i class="bi bi-exclamation-triangle-fill me-1"></i> Google did not provide an authentication token.</div>';
+                    return;
+                }
+
+                alertBox.innerHTML = '<div class="alert alert-info py-2 small mb-3"><i class="bi bi-hourglass-split me-1"></i> Authenticating with PSG Tech student records...</div>';
+
+                fetch('/auth/google', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify({ credential: response.credential })
+                })
+                    .then(async (res) => {
+                        const data = await res.json();
+                        if (res.ok && data.success) {
+                            window.location.href = data.redirectUrl || '/dashboard';
+                        } else {
+                            alertBox.innerHTML = `<div class="alert alert-danger py-2 px-3 small mb-3 d-flex align-items-center gap-2">
+                    <i class="bi bi-exclamation-circle-fill flex-shrink-0"></i>
+                    <div>${data.message || 'Authentication rejected.'}</div>
+                </div>`;
+                        }
+                    })
+                    .catch((err) => {
+                        console.error('Google Sign-In Error:', err);
+                        alertBox.innerHTML = '<div class="alert alert-danger py-2 small mb-3"><i class="bi bi-exclamation-triangle-fill me-1"></i> Server communication error. Please check your network and try again.</div>';
+                    });
+            }
+
+            // Toggle Password Visibility
+            function togglePasswordVisibility(inputId, btn) {
+                const input = document.getElementById(inputId);
+                if (!input) return;
+                const icon = btn.querySelector('i');
+                if (input.type === 'password') {
+                    input.type = 'text';
+                    if (icon) {
+                        icon.classList.remove('bi-eye');
+                        icon.classList.add('bi-eye-slash');
+                    }
+                } else {
+                    input.type = 'password';
+                    if (icon) {
+                        icon.classList.remove('bi-eye-slash');
+                        icon.classList.add('bi-eye');
+                    }
+                }
+            }
+        </script>
+
+        <%- include('../partials/footer.html') %>

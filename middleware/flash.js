@@ -12,6 +12,14 @@ module.exports = function flashMiddleware(req, res, next) {
       req.session.flash[type] = [];
     }
     req.session.flash[type].push(message);
+
+    // Also push to current request view locals for immediate renders
+    if (res.locals.messages) {
+      if (!res.locals.messages[type]) {
+        res.locals.messages[type] = [];
+      }
+      res.locals.messages[type].push(message);
+    }
   };
 
   // Expose messages to views and then clear them

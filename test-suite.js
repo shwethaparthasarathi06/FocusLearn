@@ -18,7 +18,8 @@ async function runTests() {
   console.log('====================================================');
 
   try {
-    // 1. Initialize Server & MongoDB Connection
+    // 1. Initialize Server & MongoDB Connection (on separate test port to avoid conflict)
+    process.env.PORT = '3005';
     const server = await startServer();
     const agent = supertest.agent(server);
     console.log('[TEST 1] Server boot & Database connection: PASS');
@@ -47,8 +48,14 @@ async function runTests() {
       throw new Error(`Protected route security failed. Status: ${guestDashRes.status}`);
     }
 
-    // 5. Test Student Registration via POST /auth/register
-    const testEmail = `student_${Date.now()}@focuslearn.edu`;
+    // 5. Test Student Registration via POST /auth/register (Official PSG Tech Batch Email)
+    const testEmail = '26mx115@psgtech.ac.in';
+    const existingTestUser = await User.findOne({ email: testEmail });
+    if (existingTestUser) {
+      await QuizAttempt.deleteMany({ userId: existingTestUser._id });
+      await StudentProgress.deleteMany({ userId: existingTestUser._id });
+      await User.deleteOne({ _id: existingTestUser._id });
+    }
     const regRes = await agent
       .post('/auth/register')
       .type('form')
@@ -59,10 +66,26 @@ async function runTests() {
         confirmPassword: 'securePassword123'
       });
 
-    if (regRes.status === 302 && regRes.headers.location === '/dashboard') {
-      console.log('[TEST 5] Student Registration & Session Auto-Login: PASS (Redirects to /dashboard)');
+    if (regRes.status === 302 && regRes.headers.location === '/auth/login') {
+      console.log('[TEST 5a] Student Registration (Registration-First): PASS (Redirects to /auth/login)');
     } else {
-      throw new Error(`Registration failed with status ${regRes.status}`);
+      throw new Error(`Registration failed with status ${regRes.status}, location: ${regRes.headers.location}`);
+    }
+
+    // Authenticate registered student via POST /auth/login
+    const loginRes = await agent
+      .post('/auth/login')
+      .type('form')
+      .send({
+        role: 'student',
+        email: testEmail,
+        password: 'securePassword123'
+      });
+
+    if (loginRes.status === 302 && loginRes.headers.location === '/dashboard') {
+      console.log('[TEST 5b] Registered Student Login & Session Establishment: PASS (Redirects to /dashboard)');
+    } else {
+      throw new Error(`Login after registration failed with status ${loginRes.status}`);
     }
 
     // 6. Verify Bcrypt Password Hashing in MongoDB
