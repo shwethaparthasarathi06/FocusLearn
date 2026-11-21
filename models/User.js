@@ -23,8 +23,15 @@ const userSchema = new mongoose.Schema(
     },
     passwordHash: {
       type: String,
-      required: [true, 'Password is required'],
+      required: function () {
+        return !this.googleId;
+      },
       minlength: [6, 'Password hash must be valid']
+    },
+    googleId: {
+      type: String,
+      sparse: true,
+      trim: true
     },
     role: {
       type: String,
@@ -78,13 +85,14 @@ const userSchema = new mongoose.Schema(
 
 // Hash password before saving if modified
 userSchema.pre('save', async function () {
-  if (!this.isModified('passwordHash')) return;
+  if (!this.isModified('passwordHash') || !this.passwordHash) return;
   const salt = await bcrypt.genSalt(10);
   this.passwordHash = await bcrypt.hash(this.passwordHash, salt);
 });
 
 // Instance method to check password validity
 userSchema.methods.comparePassword = async function (candidatePassword) {
+  if (!this.passwordHash) return false;
   return bcrypt.compare(candidatePassword, this.passwordHash);
 };
 
