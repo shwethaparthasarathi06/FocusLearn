@@ -11,6 +11,10 @@
       border-left: 4px solid #6366f1;
       background-color: #fff;
     }
+    .badge-redo {
+      background-color: #7c3aed;
+      color: #fff;
+    }
   </style>
 </head>
 <body class="bg-light">
@@ -23,6 +27,7 @@
     <a href="/admin/subjects" class="btn btn-outline-light btn-sm me-2">Courses</a>
     <a href="/admin/modules" class="btn btn-outline-light btn-sm me-2">Topics</a>
     <a href="/admin/quizzes" class="btn btn-light btn-sm me-2 fw-semibold">Quizzes</a>
+    <a href="/admin/materials" class="btn btn-outline-light btn-sm me-2">Materials</a>
     <a href="/admin/quiz-results" class="btn btn-outline-light btn-sm me-2">Results</a>
     <a href="/admin" class="btn btn-outline-light btn-sm">Dashboard</a>
   </div>
@@ -32,7 +37,7 @@
   <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
     <div>
       <h2 class="fw-bold mb-1">Manage 10-Question Topic Quizzes</h2>
-      <p class="text-muted mb-0">Every curriculum topic features an assessment quiz with 10 questions, 4 choices, and instant server-side grading.</p>
+      <p class="text-muted mb-0">Create separate assessment question sets for standard student learning and course redo attempts.</p>
     </div>
     <a href="/admin/quiz-results" class="btn btn-outline-dark btn-sm">
       <i class="bi bi-award-fill me-1 text-warning"></i> View Student Scores
@@ -66,12 +71,11 @@
 
     <form action="/admin/quizzes" method="POST" id="quiz-builder-form">
       <div class="row g-3 mb-3">
-        <div class="col-md-6">
+        <div class="col-md-5">
           <label class="form-label fw-semibold">Target Topic / Module <span class="text-danger">*</span></label>
           <select class="form-select" name="moduleId" id="select-module" required>
             <option value="">-- Choose Course Topic --</option>
             <% 
-              // Group modules by course
               const courseGroup = {};
               modules.forEach(m => {
                 const cName = m.courseId ? `[${m.courseId.code}] ${m.courseId.title}` : 'Unassigned';
@@ -82,7 +86,7 @@
             %>
               <optgroup label="<%= cName %>">
                 <% courseGroup[cName].forEach(m => { %>
-                  <option value="<%= m._id %>" data-title="<%= m.title %>" <%= (targetModuleId === m._id.toString()) ? 'selected' : '' %>>
+                  <option value="<%= m._id %>" data-title="<%= m.title %>" <%= (typeof targetModuleId !== 'undefined' && targetModuleId === m._id.toString()) ? 'selected' : '' %>>
                     Module <%= m.moduleNumber %>: <%= m.title %>
                   </option>
                 <% }) %>
@@ -91,7 +95,16 @@
           </select>
         </div>
 
-        <div class="col-md-4">
+        <div class="col-md-3">
+          <label class="form-label fw-semibold">Quiz Purpose / Type <span class="text-danger">*</span></label>
+          <select class="form-select fw-semibold" name="quizType" id="select-quiz-type" required>
+            <option value="regular">Original Assessment</option>
+            <option value="redo">Course Redo Assessment</option>
+          </select>
+          <div class="form-text small">Select 'Course Redo' to create the alternate quiz given when a student redoes this course.</div>
+        </div>
+
+        <div class="col-md-2">
           <label class="form-label fw-semibold">Quiz Title</label>
           <input class="form-control" name="title" id="quiz-title-input" placeholder="e.g. Memory Management Assessment">
         </div>
@@ -117,28 +130,58 @@
     </form>
   </div>
 
-  <!-- Existing Quizzes List -->
+  <!-- Existing Quizzes List Card with Filter -->
   <div class="card shadow-sm border-0 p-4">
-    <h5 class="fw-bold mb-3">
-      <i class="bi bi-list-check me-2 text-secondary"></i>Existing Quizzes (<%= quizzes.length %>)
-    </h5>
+    <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+      <div>
+        <h5 class="fw-bold mb-0">
+          <i class="bi bi-list-check me-2 text-secondary"></i>Existing Quizzes (<span id="quizzes-count"><%= quizzes.length %></span>)
+        </h5>
+        <div class="small text-muted" id="filter-quizzes-status">Showing all created quizzes</div>
+      </div>
+
+      <!-- Quizzes Filter Form -->
+      <form method="GET" action="/admin/quizzes" class="d-flex align-items-center gap-2 flex-wrap" id="quizzes-filter-form">
+        <label class="small text-muted mb-0 text-nowrap">Course:</label>
+        <select name="courseId" id="filter-quiz-course" class="form-select form-select-sm" style="min-width: 170px;">
+          <option value="">All Courses</option>
+          <% courses.forEach(c => { %>
+            <option value="<%= c._id %>" <%= (typeof selectedCourseId !== 'undefined' && selectedCourseId === c._id.toString()) ? 'selected' : '' %>>
+              [<%= c.code %>] <%= c.title %>
+            </option>
+          <% }) %>
+        </select>
+
+        <label class="small text-muted mb-0 text-nowrap">Type:</label>
+        <select name="quizType" id="filter-quiz-type" class="form-select form-select-sm" style="min-width: 150px;">
+          <option value="">All Types</option>
+          <option value="regular" <%= (typeof selectedQuizType !== 'undefined' && selectedQuizType === 'regular') ? 'selected' : '' %>>Original Quiz</option>
+          <option value="redo" <%= (typeof selectedQuizType !== 'undefined' && selectedQuizType === 'redo') ? 'selected' : '' %>>Redo Quiz</option>
+        </select>
+
+        <a href="/admin/quizzes" class="btn btn-outline-secondary btn-sm" title="Clear Filters">Clear</a>
+      </form>
+    </div>
 
     <div class="table-responsive">
-      <table class="table table-hover table-bordered align-middle">
+      <table class="table table-hover table-bordered align-middle" id="quizzes-table">
         <thead class="table-dark">
           <tr>
             <th>Course</th>
             <th>Topic / Module</th>
             <th>Quiz Title</th>
-            <th style="width: 100px;">Questions</th>
-            <th style="width: 100px;">Pass Score</th>
-            <th style="width: 180px;">Actions</th>
+            <th style="width: 130px;">Purpose</th>
+            <th style="width: 90px;">Questions</th>
+            <th style="width: 90px;">Pass Score</th>
+            <th style="width: 150px;">Actions</th>
           </tr>
         </thead>
         <tbody>
           <% if (quizzes && quizzes.length > 0) { %>
             <% quizzes.forEach(q => { %>
-              <tr>
+              <tr class="quiz-row"
+                  data-course-id="<%= q.courseId ? q.courseId._id : '' %>"
+                  data-quiz-type="<%= q.quizType || 'regular' %>">
                 <td>
                   <% if (q.courseId) { %>
                     <span class="badge bg-primary"><%= q.courseId.code %></span>
@@ -156,8 +199,15 @@
                   <% } %>
                 </td>
                 <td class="fw-bold text-dark"><%= q.title %></td>
+                <td>
+                  <% if (q.quizType === 'redo') { %>
+                    <span class="badge badge-redo px-2 py-1"><i class="bi bi-arrow-repeat me-1"></i>Course Redo</span>
+                  <% } else { %>
+                    <span class="badge bg-primary px-2 py-1"><i class="bi bi-star-fill me-1"></i>Original</span>
+                  <% } %>
+                </td>
                 <td class="text-center">
-                  <span class="badge bg-info text-dark"><%= q.questions.length %> Qs</span>
+                  <span class="badge bg-info text-dark"><%= q.questions ? q.questions.length : 0 %> Qs</span>
                 </td>
                 <td class="text-center"><%= q.passingScore || 6 %>/10</td>
                 <td>
@@ -173,13 +223,15 @@
                 </td>
               </tr>
             <% }) %>
-          <% } else { %>
-            <tr>
-              <td colspan="6" class="text-center py-4 text-muted">
-                No quizzes found. Use the builder above to create a 10-question quiz!
-              </td>
-            </tr>
           <% } %>
+
+          <tr id="empty-quizzes-row" class="<%= (quizzes.length === 0) ? '' : 'd-none' %>">
+            <td colspan="7" class="text-center py-4 text-muted">
+              <i class="bi bi-patch-question fs-3 text-secondary d-block mb-2"></i>
+              <strong>No quizzes found matching the selected filter.</strong>
+              <div class="small mt-1">Use the builder above to create an Original or Redo 10-Question Quiz!</div>
+            </td>
+          </tr>
         </tbody>
       </table>
     </div>
@@ -190,16 +242,20 @@
   // Dynamically render 10 question cards
   const wrapper = document.getElementById('questions-wrapper');
   const modSelect = document.getElementById('select-module');
+  const typeSelect = document.getElementById('select-quiz-type');
   const titleInput = document.getElementById('quiz-title-input');
 
-  modSelect.addEventListener('change', () => {
+  function updateQuizTitleSuggestion() {
     const selectedOption = modSelect.options[modSelect.selectedIndex];
     if (selectedOption && selectedOption.dataset.title) {
-      if (!titleInput.value || titleInput.value.includes('Assessment')) {
-        titleInput.value = selectedOption.dataset.title + ' Assessment';
-      }
+      const isRedo = typeSelect.value === 'redo';
+      const suffix = isRedo ? 'Redo Assessment' : 'Assessment';
+      titleInput.value = `${selectedOption.dataset.title} ${suffix}`;
     }
-  });
+  }
+
+  modSelect.addEventListener('change', updateQuizTitleSuggestion);
+  typeSelect.addEventListener('change', updateQuizTitleSuggestion);
 
   for (let i = 0; i < 10; i++) {
     const card = document.createElement('div');
@@ -257,6 +313,8 @@
   document.getElementById('btn-autofill-sample').addEventListener('click', () => {
     const selectedOption = modSelect.options[modSelect.selectedIndex];
     const topic = (selectedOption && selectedOption.dataset.title) ? selectedOption.dataset.title : 'this topic';
+    const isRedo = typeSelect.value === 'redo';
+    const prefix = isRedo ? '[Redo Review]' : '';
 
     for (let i = 0; i < 10; i++) {
       const qText = document.getElementById(`q_text_${i}`);
@@ -268,16 +326,66 @@
       const exp = document.getElementById(`q_exp_${i}`);
 
       if (!qText.value) {
-        qText.value = `Which of the following statements best describes core concept #${i + 1} regarding ${topic}?`;
-        opt0.value = `It optimizes execution throughput and memory resource utilization for ${topic}.`;
-        opt1.value = `It represents an auxiliary obsolete routine.`;
-        opt2.value = `It forces immediate synchronous execution without queuing.`;
-        opt3.value = `It is deprecated in current curriculum specifications.`;
+        qText.value = `${prefix} Which key principle best describes concept #${i + 1} regarding ${topic}?`;
+        opt0.value = `Optimizes throughput, resource management, and correctness in ${topic}.`;
+        opt1.value = `Represents an obsolete legacy convention.`;
+        opt2.value = `Forces immediate unbuffered synchronous operations.`;
+        opt3.value = `Disables memory protection for performance reasons.`;
         correct.value = "0";
-        exp.value = `Core concept #${i + 1} is designed to optimize execution efficiency and resource usage in ${topic}.`;
+        exp.value = `Concept #${i + 1} is designed to guarantee high efficiency, resource management, and correctness.`;
       }
     }
   });
+
+  // Client-Side Dynamic Live Filter for Quizzes Table
+  const filterQuizCourse = document.getElementById('filter-quiz-course');
+  const filterQuizType = document.getElementById('filter-quiz-type');
+  const quizRows = document.querySelectorAll('.quiz-row');
+  const emptyQuizzesRow = document.getElementById('empty-quizzes-row');
+  const quizzesCountSpan = document.getElementById('quizzes-count');
+  const filterStatusSpan = document.getElementById('filter-quizzes-status');
+
+  function applyQuizFilters() {
+    const selCourse = filterQuizCourse ? filterQuizCourse.value.trim() : '';
+    const selType = filterQuizType ? filterQuizType.value.trim() : '';
+
+    let visibleCount = 0;
+
+    quizRows.forEach(row => {
+      const rowCourse = row.dataset.courseId || '';
+      const rowType = row.dataset.quizType || '';
+
+      const matchCourse = !selCourse || rowCourse === selCourse;
+      const matchType = !selType || rowType === selType;
+
+      if (matchCourse && matchType) {
+        row.classList.remove('d-none');
+        visibleCount++;
+      } else {
+        row.classList.add('d-none');
+      }
+    });
+
+    if (quizzesCountSpan) quizzesCountSpan.textContent = visibleCount;
+    if (emptyQuizzesRow) {
+      if (visibleCount === 0) {
+        emptyQuizzesRow.classList.remove('d-none');
+      } else {
+        emptyQuizzesRow.classList.add('d-none');
+      }
+    }
+
+    if (filterStatusSpan) {
+      if (selCourse || selType) {
+        filterStatusSpan.textContent = `Filtered view: showing ${visibleCount} of ${quizRows.length} quizzes`;
+      } else {
+        filterStatusSpan.textContent = 'Showing all created quizzes';
+      }
+    }
+  }
+
+  if (filterQuizCourse) filterQuizCourse.addEventListener('change', applyQuizFilters);
+  if (filterQuizType) filterQuizType.addEventListener('change', applyQuizFilters);
 </script>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>

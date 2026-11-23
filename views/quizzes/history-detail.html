@@ -1,0 +1,286 @@
+
+<%- include('../partials/header.html') %>
+<%- include('../partials/sidebar.html') %>
+
+<div class="main-content">
+    <%- include('../partials/flash.html') %>
+
+    <div class="container-fluid py-3">
+
+        <!-- Breadcrumb -->
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item">
+                    <a href="/dashboard">Dashboard</a>
+                </li>
+                <li class="breadcrumb-item">
+                    <a href="/quizzes/history">Quiz History</a>
+                </li>
+                <li class="breadcrumb-item active">Quiz Review</li>
+            </ol>
+        </nav>
+
+        <!-- Page Heading -->
+        <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-4">
+            <div>
+                <h2 class="courses-title mb-1">Quiz Attempt Review</h2>
+                <p class="text-muted mb-0">
+                    Review your answers and understand your performance.
+                </p>
+            </div>
+
+            <a href="/quizzes/history" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left me-1"></i>
+                Back to Quiz History
+            </a>
+        </div>
+
+        <!-- Score Summary -->
+        <div class="card-panel p-4 mb-4">
+            <div class="row align-items-center g-4">
+
+                <div class="col-md-4 text-center">
+                    <div class="score-badge-circle <%= attempt.passed ? 'passed' : 'failed' %> mx-auto">
+                        <div><%= attempt.score %>/<%= attempt.maxScore %></div>
+                        <span class="score-pct-label"><%= attempt.percentage %>%</span>
+                    </div>
+
+                    <div class="mt-3">
+                        <% if (attempt.passed) { %>
+                            <span class="badge bg-success fs-6">
+                                <i class="bi bi-check-circle-fill me-1"></i>
+                                Passed
+                            </span>
+                        <% } else { %>
+                            <span class="badge bg-danger fs-6">
+                                <i class="bi bi-exclamation-circle-fill me-1"></i>
+                                Needs Revision
+                            </span>
+                        <% } %>
+                    </div>
+                </div>
+
+                <div class="col-md-8">
+                    <h4 class="fw-bold mb-3">
+                        <%= quiz ? quiz.title : 'Quiz Assessment' %>
+                    </h4>
+
+                    <p class="text-muted mb-3">
+                        <strong>Course:</strong>
+                        <%= course ? course.title : 'N/A' %>
+                        <br>
+
+                        <strong>Module:</strong>
+                        <%= moduleDoc ? moduleDoc.title : 'N/A' %>
+                        <br>
+
+                        <strong>Attempt:</strong>
+                        #<%= attempt.attemptNumber %>
+                        <br>
+
+                        <strong>Date:</strong>
+                        <%= attempt.formattedDate %>
+                        <br>
+
+                        <strong>Time:</strong>
+                        <%= attempt.formattedTime %>
+                        <br>
+
+                        <strong>Time Taken:</strong>
+                        <%= attempt.timeSpentFormatted %>
+                    </p>
+
+                    <div class="row g-2">
+                        <div class="col-6 col-md-3">
+                            <div class="p-3 rounded bg-light text-center">
+                                <h4 class="text-success mb-0">
+                                    <%= attempt.correctCount %>
+                                </h4>
+                                <small class="text-muted">Correct</small>
+                            </div>
+                        </div>
+
+                        <div class="col-6 col-md-3">
+                            <div class="p-3 rounded bg-light text-center">
+                                <h4 class="text-danger mb-0">
+                                    <%= attempt.incorrectCount %>
+                                </h4>
+                                <small class="text-muted">Incorrect</small>
+                            </div>
+                        </div>
+
+                        <div class="col-6 col-md-3">
+                            <div class="p-3 rounded bg-light text-center">
+                                <h4 class="text-warning mb-0">
+                                    <%= attempt.unansweredCount %>
+                                </h4>
+                                <small class="text-muted">Unanswered</small>
+                            </div>
+                        </div>
+
+                        <div class="col-6 col-md-3">
+                            <div class="p-3 rounded bg-light text-center">
+                                <h4 class="text-primary mb-0">
+                                    <%= attempt.totalQuestions %>
+                                </h4>
+                                <small class="text-muted">Total</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Question Review -->
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h4 class="fw-bold mb-0">Question-wise Review</h4>
+            <span class="text-muted">
+                <%= questions.length %> Questions
+            </span>
+        </div>
+
+        <% if (questions && questions.length > 0) { %>
+
+            <% questions.forEach(function(q) { %>
+
+                <div class="card-panel p-4 mb-3">
+
+                    <div class="d-flex justify-content-between align-items-start gap-2 mb-3">
+                        <h5 class="fw-bold mb-0">
+                            Question <%= q.index %>
+                        </h5>
+
+                        <% if (q.isCorrect) { %>
+                            <span class="badge bg-success">
+                                <i class="bi bi-check-circle-fill me-1"></i>
+                                Correct
+                            </span>
+                        <% } else if (q.isUnanswered) { %>
+                            <span class="badge bg-warning text-dark">
+                                Unanswered
+                            </span>
+                        <% } else { %>
+                            <span class="badge bg-danger">
+                                <i class="bi bi-x-circle-fill me-1"></i>
+                                Incorrect
+                            </span>
+                        <% } %>
+                    </div>
+
+                    <p class="fs-6 fw-semibold mb-3">
+                        <%= q.questionText %>
+                    </p>
+
+                    <!-- Options -->
+                    <div class="d-grid gap-2">
+
+                        <% q.options.forEach(function(option, index) { %>
+
+                            <div class="border rounded p-3
+                                <% if (index === q.correctOption) { %>
+                                    border-success bg-success-subtle
+                                <% } else if (index === q.selectedOption && !q.isCorrect) { %>
+                                    border-danger bg-danger-subtle
+                                <% } %>">
+
+                                <div class="d-flex align-items-center gap-2">
+
+                                    <strong>
+                                        <%= String.fromCharCode(65 + index) %>.
+                                    </strong>
+
+                                    <span class="flex-grow-1">
+                                        <%= option %>
+                                    </span>
+
+                                    <% if (index === q.correctOption) { %>
+                                        <span class="text-success fw-semibold">
+                                            <i class="bi bi-check-circle-fill"></i>
+                                            Correct Answer
+                                        </span>
+                                    <% } else if (index === q.selectedOption) { %>
+                                        <span class="text-danger fw-semibold">
+                                            <i class="bi bi-x-circle-fill"></i>
+                                            Your Answer
+                                        </span>
+                                    <% } %>
+
+                                </div>
+                            </div>
+
+                        <% }); %>
+
+                    </div>
+
+                    <!-- Answer Summary -->
+                    <div class="mt-3 p-3 rounded bg-light">
+                        <p class="mb-1">
+                            <strong>Your Answer:</strong>
+                            <% if (q.isUnanswered) { %>
+                                <span class="text-warning">Not Answered</span>
+                            <% } else { %>
+                                <%= q.selectedOptionLetter %> -
+                                <%= q.selectedOptionText %>
+                            <% } %>
+                        </p>
+
+                        <p class="mb-0">
+                            <strong>Correct Answer:</strong>
+                            <span class="text-success">
+                                <%= q.correctOptionLetter %> -
+                                <%= q.correctOptionText %>
+                            </span>
+                        </p>
+                    </div>
+
+                    <!-- Explanation -->
+                    <% if (q.explanation) { %>
+                        <div class="mt-3 p-3 border-start border-4 border-primary bg-light rounded">
+                            <h6 class="fw-bold">
+                                <i class="bi bi-lightbulb-fill text-warning me-1"></i>
+                                Explanation
+                            </h6>
+
+                            <p class="mb-0 text-muted">
+                                <%= q.explanation %>
+                            </p>
+                        </div>
+                    <% } %>
+
+                </div>
+
+            <% }); %>
+
+        <% } else { %>
+
+            <div class="card-panel text-center p-5">
+                <i class="bi bi-clipboard-x fs-1 text-muted"></i>
+                <h5 class="mt-3">No Question Details Available</h5>
+                <p class="text-muted">
+                    Question details could not be found for this attempt.
+                </p>
+            </div>
+
+        <% } %>
+
+        <!-- Bottom Navigation -->
+        <div class="d-flex justify-content-between flex-wrap gap-2 my-4">
+
+            <a href="/quizzes/history"
+               class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left me-1"></i>
+                Quiz History
+            </a>
+
+            <a href="/courses"
+               class="btn-focus">
+                <i class="bi bi-journal-bookmark me-1"></i>
+                Browse Courses
+            </a>
+
+        </div>
+
+    </div>
+</div>
+
+<%- include('../partials/footer.html') %>

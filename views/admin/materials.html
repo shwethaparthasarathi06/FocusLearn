@@ -4,154 +4,412 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title><%= pageTitle %></title>
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
-        rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
 </head>
 <body class="bg-light">
 
 <nav class="navbar navbar-dark bg-dark px-4">
-  <a class="navbar-brand" href="/admin">FocusLearn Admin</a>
-  <a href="/admin/quizzes" class="btn btn-outline-light btn-sm me-2">Quizzes</a><a href="/admin/quiz-results" class="btn btn-outline-light btn-sm me-2">Results</a><a href="/admin" class="btn btn-outline-light btn-sm">Dashboard</a>
+  <a class="navbar-brand fw-bold" href="/admin">
+    <i class="bi bi-shield-lock-fill text-warning me-2"></i>FocusLearn Admin
+  </a>
+  <div>
+    <a href="/admin/subjects" class="btn btn-outline-light btn-sm me-2">Courses</a>
+    <a href="/admin/modules" class="btn btn-outline-light btn-sm me-2">Topics</a>
+    <a href="/admin/quizzes" class="btn btn-outline-light btn-sm me-2">Quizzes</a>
+    <a href="/admin/materials" class="btn btn-light btn-sm me-2 fw-semibold">Materials</a>
+    <a href="/admin/quiz-results" class="btn btn-outline-light btn-sm me-2">Results</a>
+    <a href="/admin" class="btn btn-outline-light btn-sm">Dashboard</a>
+  </div>
 </nav>
 
 <div class="container py-4">
-  <h2>Manage Study Materials</h2>
+  <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+    <div>
+      <h2 class="fw-bold mb-1">Manage Study Materials</h2>
+      <p class="text-muted mb-0">Upload PDF documents, PowerPoint (.ppt / .pptx) presentations, and embed YouTube video lectures.</p>
+    </div>
+    <a href="/admin/subjects" class="btn btn-outline-dark btn-sm">
+      <i class="bi bi-collection me-1"></i> View Courses
+    </a>
+  </div>
 
   <% if (message) { %>
-    <div class="alert alert-success"><%= message %></div>
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+      <i class="bi bi-check-circle-fill me-2"></i><%= message %>
+      <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
   <% } %>
 
   <% if (error) { %>
-    <div class="alert alert-danger"><%= error %></div>
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+      <i class="bi bi-exclamation-triangle-fill me-2"></i><%= error %>
+      <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
   <% } %>
 
-  <div class="card shadow-sm p-4 my-4">
-    <h5>Add Study Material</h5>
+  <!-- Add Study Material Form Card -->
+  <div class="card shadow-sm border-0 p-4 mb-4">
+    <h5 class="fw-bold text-primary mb-3">
+      <i class="bi bi-plus-circle-fill me-2"></i>Add Study Material (PDF, PPT/PPTX, YouTube Video)
+    </h5>
 
-    <form action="/admin/materials" method="POST">
+    <form action="/admin/materials" method="POST" enctype="multipart/form-data" id="material-form">
+      <div class="row g-3">
+        <div class="col-md-6">
+          <label class="form-label fw-semibold">Material Title <span class="text-danger">*</span></label>
+          <input name="title" class="form-control" placeholder="e.g. Normalization & BCNF Slides" required>
+        </div>
 
-      <label class="form-label">Material Title</label>
-      <input name="title" class="form-control mb-3" required>
+        <div class="col-md-6">
+          <label class="form-label fw-semibold">Select Course / Subject <span class="text-danger">*</span></label>
+          <select name="courseId" id="select-course-material" class="form-select" required>
+            <option value="">-- Choose Subject --</option>
+            <% courses.forEach(course => { %>
+              <option value="<%= course._id %>" <%= (typeof selectedCourseId !== 'undefined' && selectedCourseId === course._id.toString()) ? 'selected' : '' %>>
+                [<%= course.code %>] <%= course.title %>
+              </option>
+            <% }) %>
+          </select>
+        </div>
 
-      <label class="form-label">Description</label>
-      <textarea name="description" class="form-control mb-3"></textarea>
+        <div class="col-md-6">
+          <label class="form-label fw-semibold">Assign to Topic / Module (optional)</label>
+          <select name="moduleId" class="form-select">
+            <option value="">Whole course / not topic-specific</option>
+            <% modules.forEach(module => { %>
+              <option value="<%= module._id %>">
+                <%= module.courseId ? '[' + module.courseId.code + '] ' : '' %>Module <%= module.moduleNumber %>: <%= module.title %>
+              </option>
+            <% }) %>
+          </select>
+        </div>
 
-      <label class="form-label">Select Subject</label>
-      <select name="courseId" class="form-select mb-3" required>
-        <option value="">Choose Subject</option>
-        <% courses.forEach(course => { %>
-          <option value="<%= course._id %>"><%= course.title %></option>
-        <% }) %>
-      </select>
+        <div class="col-md-3">
+          <label class="form-label fw-semibold">Topic Number (optional)</label>
+          <input type="number" min="1" name="topicNumber" class="form-control" placeholder="e.g. 1">
+        </div>
 
-      <label class="form-label">Assign to Topic / Module (optional)</label>
-      <select name="moduleId" class="form-select mb-3">
-        <option value="">Whole course / not topic-specific</option>
-        <% modules.forEach(module => { %>
-          <option value="<%= module._id %>"><%= module.courseId ? module.courseId.title + ' — ' : '' %><%= module.title %></option>
-        <% }) %>
-      </select>
-      <label class="form-label">Topic number (optional)</label>
-      <input type="number" min="1" name="topicNumber" class="form-control mb-3" placeholder="e.g. 1">
+        <div class="col-md-3">
+          <label class="form-label fw-semibold">Material Type <span class="text-danger">*</span></label>
+          <select name="materialType" id="materialType" class="form-select fw-semibold" required>
+            <option value="PDF">📄 PDF Document</option>
+            <option value="PPT">📊 PowerPoint (PPT/PPTX)</option>
+            <option value="Video">▶ YouTube Video</option>
+            <option value="Link">🔗 External Link</option>
+            <option value="Text">📝 Written Notes</option>
+          </select>
+        </div>
 
-      <label class="form-label">Material Type</label>
-      <select name="materialType" id="materialType"
-              class="form-select mb-3" required>
-        <option value="PDF">PDF</option>
-        <option value="Video">Video</option>
-        <option value="Link">External Link</option>
-        <option value="Text">Written Notes</option>
-      </select>
+        <div class="col-12">
+          <label class="form-label fw-semibold">Brief Description (optional)</label>
+          <textarea name="description" class="form-control" rows="2" placeholder="Overview of what students will learn from this resource..."></textarea>
+        </div>
 
-      <div id="urlField">
-        <label class="form-label">Material URL</label>
-        <input name="materialUrl" id="materialUrl"
-               class="form-control mb-3"
-               placeholder="https://example.com/resource">
+        <!-- File Upload Field (PDF & PPT) -->
+        <div class="col-md-6" id="fileUploadContainer">
+          <label class="form-label fw-semibold" id="fileUploadLabel">Upload File (PDF / PPT / PPTX)</label>
+          <input type="file" name="materialFile" id="materialFile" class="form-control" accept=".pdf,.ppt,.pptx">
+          <div class="form-text small" id="fileUploadHint">Supported: .pdf, .ppt, .pptx (Max 50MB). Stored securely on server.</div>
+        </div>
+
+        <!-- Material URL Field (URL, YouTube, or Existing Path) -->
+        <div class="col-md-6" id="urlField">
+          <label class="form-label fw-semibold" id="urlFieldLabel">File Path or Web URL</label>
+          <input name="materialUrl" id="materialUrl" class="form-control" placeholder="/materials/sample.pdf or https://...">
+          <div class="form-text small" id="urlFieldHint">Enter a public path (e.g. <code>/materials/file.pdf</code>) or online link.</div>
+        </div>
+
+        <!-- Written Content Field (Only for Text) -->
+        <div class="col-12" id="contentField" style="display:none">
+          <label class="form-label fw-semibold">Written Lesson Notes / Content <span class="text-danger">*</span></label>
+          <textarea name="content" id="content" class="form-control" rows="5" placeholder="Enter complete academic notes for students..."></textarea>
+        </div>
       </div>
 
-      <div id="contentField" style="display:none">
-        <label class="form-label">Written Material</label>
-        <textarea name="content" id="content"
-                  class="form-control mb-3" rows="6"></textarea>
+      <div class="mt-4">
+        <button type="submit" class="btn btn-success px-4 py-2 fw-semibold">
+          <i class="bi bi-cloud-arrow-up-fill me-1"></i> Add Study Material
+        </button>
       </div>
-
-      <button class="btn btn-success">Add Material</button>
     </form>
   </div>
 
-  <div class="card shadow-sm p-4">
-    <h5>Existing Materials</h5>
+  <!-- Filter & Existing Materials Table Card -->
+  <div class="card shadow-sm border-0 p-4">
+    <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+      <div>
+        <h5 class="fw-bold mb-0">
+          <i class="bi bi-collection-play me-2 text-secondary"></i>Existing Study Materials (<span id="materials-count"><%= materials.length %></span>)
+        </h5>
+        <div class="small text-muted" id="filter-materials-status">Showing all published resources across courses</div>
+      </div>
+
+      <!-- Quick Filter Form -->
+      <form method="GET" action="/admin/materials" id="materials-filter-form" class="d-flex align-items-center gap-2 flex-wrap">
+        <label class="small text-muted mb-0 text-nowrap">Filter by Type:</label>
+        <select name="materialType" id="filter-type-select" class="form-select form-select-sm" style="min-width: 140px;">
+          <option value="">All Types</option>
+          <option value="PDF" <%= (typeof selectedType !== 'undefined' && selectedType === 'PDF') ? 'selected' : '' %>>PDF</option>
+          <option value="PPT" <%= (typeof selectedType !== 'undefined' && selectedType === 'PPT') ? 'selected' : '' %>>PPT / PPTX</option>
+          <option value="Video" <%= (typeof selectedType !== 'undefined' && selectedType === 'Video') ? 'selected' : '' %>>YouTube</option>
+          <option value="Link" <%= (typeof selectedType !== 'undefined' && selectedType === 'Link') ? 'selected' : '' %>>Link</option>
+          <option value="Text" <%= (typeof selectedType !== 'undefined' && selectedType === 'Text') ? 'selected' : '' %>>Notes</option>
+        </select>
+
+        <a href="/admin/materials" class="btn btn-outline-secondary btn-sm" title="Clear Filters">Clear</a>
+      </form>
+    </div>
 
     <div class="table-responsive">
-      <table class="table table-bordered table-striped mt-3">
-        <thead>
+      <table class="table table-hover table-bordered align-middle" id="materials-table">
+        <thead class="table-dark">
           <tr>
-            <th>Title</th>
-            <th>Subject</th>
-            <th>Topic</th>
-            <th>Type</th>
-            <th>Status</th>
-            <th>Actions</th>
+            <th>Material Title & Resource</th>
+            <th style="width: 140px;">Course</th>
+            <th style="width: 180px;">Topic / Module</th>
+            <th style="width: 130px;">Type</th>
+            <th style="width: 90px;">Status</th>
+            <th style="width: 150px;">Actions</th>
           </tr>
         </thead>
 
         <tbody>
           <% materials.forEach(material => { %>
-            <tr>
-              <td><%= material.title %></td>
-              <td><%= material.courseId ? material.courseId.title : 'Subject removed' %></td>
-              <td><%= material.moduleId ? material.moduleId.title + (material.topicNumber ? ' - Topic ' + material.topicNumber : '') : 'Whole course' %></td>
-              <td><%= material.materialType %></td>
-              <td><%= material.isPublished ? 'Published' : 'Hidden' %></td>
+            <tr class="material-row"
+                data-course-id="<%= material.courseId ? material.courseId._id : '' %>"
+                data-type="<%= material.materialType %>"
+                data-title="<%= material.title.toLowerCase() %>">
               <td>
-                <a href="/admin/materials/<%= material._id %>/edit"
-                   class="btn btn-sm btn-warning">Edit</a>
+                <div class="fw-bold"><%= material.title %></div>
+                <% if (material.description) { %>
+                  <div class="small text-muted text-truncate" style="max-width: 320px;"><%= material.description %></div>
+                <% } %>
+                <div class="small mt-1">
+                  <% if (material.materialType === 'PDF') { %>
+                    <a href="<%= material.materialUrl %>" target="_blank" class="text-danger text-decoration-none">
+                      <i class="bi bi-file-earmark-pdf me-1"></i>Open PDF
+                    </a>
+                  <% } else if (material.materialType === 'PPT') { %>
+                    <a href="<%= material.materialUrl %>" target="_blank" class="text-warning text-dark text-decoration-none fw-semibold">
+                      <i class="bi bi-file-earmark-slides me-1 text-warning"></i>Download / View PPT
+                    </a>
+                  <% } else if (material.materialType === 'Video') { %>
+                    <a href="<%= material.materialUrl %>" target="_blank" class="text-danger text-decoration-none">
+                      <i class="bi bi-youtube me-1"></i>Watch on YouTube
+                    </a>
+                  <% } else if (material.materialType === 'Link') { %>
+                    <a href="<%= material.materialUrl %>" target="_blank" class="text-primary text-decoration-none">
+                      <i class="bi bi-box-arrow-up-right me-1"></i>Open Link
+                    </a>
+                  <% } else { %>
+                    <span class="text-muted"><i class="bi bi-file-text me-1"></i>Written notes</span>
+                  <% } %>
+                </div>
+              </td>
+              <td>
+                <% if (material.courseId) { %>
+                  <span class="badge bg-primary"><%= material.courseId.code %></span>
+                  <div class="small fw-semibold text-truncate" style="max-width: 130px;"><%= material.courseId.title %></div>
+                <% } else { %>
+                  <span class="text-muted small">Course removed</span>
+                <% } %>
+              </td>
+              <td>
+                <% if (material.moduleId) { %>
+                  <div class="small fw-semibold">Mod <%= material.moduleId.moduleNumber %>: <%= material.moduleId.title %></div>
+                  <% if (material.topicNumber) { %>
+                    <span class="badge bg-light text-dark border">Topic <%= material.topicNumber %></span>
+                  <% } %>
+                <% } else { %>
+                  <span class="badge bg-light text-muted border">Whole course</span>
+                <% } %>
+              </td>
+              <td>
+                <% if (material.materialType === 'PDF') { %>
+                  <span class="badge bg-danger"><i class="bi bi-file-earmark-pdf me-1"></i>PDF</span>
+                <% } else if (material.materialType === 'PPT') { %>
+                  <span class="badge bg-warning text-dark"><i class="bi bi-file-earmark-slides me-1"></i>PPT / PPTX</span>
+                <% } else if (material.materialType === 'Video') { %>
+                  <span class="badge bg-danger"><i class="bi bi-youtube me-1"></i>YouTube</span>
+                <% } else if (material.materialType === 'Link') { %>
+                  <span class="badge bg-info text-dark"><i class="bi bi-link-45deg me-1"></i>Link</span>
+                <% } else { %>
+                  <span class="badge bg-secondary"><i class="bi bi-file-text me-1"></i>Notes</span>
+                <% } %>
+              </td>
+              <td>
+                <% if (material.isPublished) { %>
+                  <span class="badge bg-success-subtle text-success border border-success-subtle">Published</span>
+                <% } else { %>
+                  <span class="badge bg-secondary">Hidden</span>
+                <% } %>
+              </td>
+              <td>
+                <a href="/admin/materials/<%= material._id %>/edit" class="btn btn-sm btn-warning me-1" title="Edit">
+                  <i class="bi bi-pencil-square"></i>
+                </a>
 
-                <form action="/admin/materials/<%= material._id %>/toggle"
-                      method="POST" class="d-inline">
-                  <button class="btn btn-sm btn-info">
-                    <%= material.isPublished ? 'Hide' : 'Publish' %>
+                <form action="/admin/materials/<%= material._id %>/toggle" method="POST" class="d-inline">
+                  <button class="btn btn-sm btn-outline-secondary me-1" title="<%= material.isPublished ? 'Hide' : 'Publish' %>">
+                    <i class="bi <%= material.isPublished ? 'bi-eye-slash' : 'bi-eye' %>"></i>
                   </button>
                 </form>
 
-                <form action="/admin/materials/<%= material._id %>?_method=DELETE"
-                      method="POST" class="d-inline"
-                      onsubmit="return confirm('Delete this material?')">
-                  <button class="btn btn-sm btn-danger">Delete</button>
+                <form action="/admin/materials/<%= material._id %>?_method=DELETE" method="POST" class="d-inline"
+                      onsubmit="return confirm('Delete material &quot;<%= material.title %>&quot;?')">
+                  <button class="btn btn-sm btn-danger" title="Delete">
+                    <i class="bi bi-trash"></i>
+                  </button>
                 </form>
               </td>
             </tr>
           <% }) %>
 
-          <% if (materials.length === 0) { %>
-            <tr><td colspan="6">No study materials added yet.</td></tr>
-          <% } %>
+          <tr id="empty-materials-row" class="<%= (materials.length === 0) ? '' : 'd-none' %>">
+            <td colspan="6" class="text-center py-4 text-muted">
+              <i class="bi bi-inbox fs-3 text-secondary d-block mb-2"></i>
+              <strong>No study materials found matching the selected filter.</strong>
+              <div class="small mt-1">Use the form above to add PDF documents, PPT presentations, or YouTube videos.</div>
+            </td>
+          </tr>
         </tbody>
       </table>
     </div>
   </div>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script>
+  // Dynamic Input Toggle based on Material Type
   const typeSelect = document.getElementById('materialType');
   const urlField = document.getElementById('urlField');
   const contentField = document.getElementById('contentField');
+  const fileUploadContainer = document.getElementById('fileUploadContainer');
   const materialUrl = document.getElementById('materialUrl');
   const content = document.getElementById('content');
+  const materialFile = document.getElementById('materialFile');
+  const fileUploadLabel = document.getElementById('fileUploadLabel');
+  const fileUploadHint = document.getElementById('fileUploadHint');
+  const urlFieldLabel = document.getElementById('urlFieldLabel');
+  const urlFieldHint = document.getElementById('urlFieldHint');
 
   function updateFields() {
-    const isText = typeSelect.value === 'Text';
+    const type = typeSelect.value;
+    const isText = (type === 'Text');
+    const isVideo = (type === 'Video');
+    const isPPT = (type === 'PPT');
+    const isPDF = (type === 'PDF');
+    const isLink = (type === 'Link');
 
-    urlField.style.display = isText ? 'none' : 'block';
     contentField.style.display = isText ? 'block' : 'none';
-
-    materialUrl.required = !isText;
     content.required = isText;
+
+    if (isText) {
+      fileUploadContainer.style.display = 'none';
+      urlField.style.display = 'none';
+      materialUrl.required = false;
+      materialFile.required = false;
+      return;
+    }
+
+    if (isVideo) {
+      fileUploadContainer.style.display = 'none';
+      urlField.style.display = 'block';
+      urlFieldLabel.innerHTML = 'YouTube Video URL <span class="text-danger">*</span>';
+      urlFieldHint.textContent = 'Paste YouTube URL (e.g. https://www.youtube.com/watch?v=... or https://youtu.be/...)';
+      materialUrl.placeholder = 'https://www.youtube.com/watch?v=dQw4w9WgXcQ';
+      materialUrl.required = true;
+      materialFile.required = false;
+      return;
+    }
+
+    if (isPPT) {
+      fileUploadContainer.style.display = 'block';
+      urlField.style.display = 'block';
+      fileUploadLabel.textContent = 'Upload PowerPoint File (.ppt, .pptx)';
+      fileUploadHint.textContent = 'Select a PowerPoint presentation (.ppt or .pptx, max 50MB).';
+      materialFile.accept = '.ppt,.pptx';
+      urlFieldLabel.textContent = 'Or Enter PowerPoint Path / URL';
+      urlFieldHint.textContent = 'e.g. /materials/Algorithms.pptx or OneDrive/Slides link.';
+      materialUrl.placeholder = '/materials/presentation.pptx';
+      materialUrl.required = false;
+      materialFile.required = false;
+      return;
+    }
+
+    if (isPDF) {
+      fileUploadContainer.style.display = 'block';
+      urlField.style.display = 'block';
+      fileUploadLabel.textContent = 'Upload PDF Document (.pdf)';
+      fileUploadHint.textContent = 'Select a PDF document (max 50MB).';
+      materialFile.accept = '.pdf';
+      urlFieldLabel.textContent = 'Or Enter PDF Material Path / URL';
+      urlFieldHint.textContent = 'e.g. /materials/Process_Management.pdf or https://...';
+      materialUrl.placeholder = '/materials/document.pdf';
+      materialUrl.required = false;
+      materialFile.required = false;
+      return;
+    }
+
+    if (isLink) {
+      fileUploadContainer.style.display = 'none';
+      urlField.style.display = 'block';
+      urlFieldLabel.innerHTML = 'External Web URL <span class="text-danger">*</span>';
+      urlFieldHint.textContent = 'e.g. https://developer.mozilla.org or academic reference site.';
+      materialUrl.placeholder = 'https://example.com/reference';
+      materialUrl.required = true;
+      materialFile.required = false;
+    }
   }
 
   typeSelect.addEventListener('change', updateFields);
   updateFields();
+
+  // Client-Side Dynamic Live Filter for Existing Materials Table
+  const filterType = document.getElementById('filter-type-select');
+  const materialRows = document.querySelectorAll('.material-row');
+  const emptyMaterialsRow = document.getElementById('empty-materials-row');
+  const materialsCountSpan = document.getElementById('materials-count');
+  const statusSpan = document.getElementById('filter-materials-status');
+
+  function applyMaterialFilters() {
+    const selectedT = filterType ? filterType.value.trim() : '';
+
+    let visibleCount = 0;
+
+    materialRows.forEach(row => {
+      const rowType = row.dataset.type || '';
+
+      const matchType = !selectedT || rowType === selectedT;
+
+      if (matchType) {
+        row.classList.remove('d-none');
+        visibleCount++;
+      } else {
+        row.classList.add('d-none');
+      }
+    });
+
+    if (materialsCountSpan) materialsCountSpan.textContent = visibleCount;
+    if (emptyMaterialsRow) {
+      if (visibleCount === 0) {
+        emptyMaterialsRow.classList.remove('d-none');
+      } else {
+        emptyMaterialsRow.classList.add('d-none');
+      }
+    }
+
+    if (statusSpan) {
+      if (selectedT) {
+        statusSpan.textContent = `Filtered view: showing ${visibleCount} of ${materialRows.length} materials`;
+      } else {
+        statusSpan.textContent = 'Showing all published resources across courses';
+      }
+    }
+  }
+
+  if (filterType) filterType.addEventListener('change', applyMaterialFilters);
 </script>
 
 </body>

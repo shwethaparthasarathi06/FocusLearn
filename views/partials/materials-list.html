@@ -1,25 +1,94 @@
 <div id="study-materials" class="container my-4">
-  <div class="card border-0 shadow-sm p-3">
-    <h4 class="mb-3"><i class="bi bi-journal-bookmark me-2"></i>Study Materials</h4>
+  <div class="card border-0 shadow-sm p-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+      <h4 class="mb-0 fw-bold"><i class="bi bi-journal-bookmark-fill me-2 text-primary"></i>Study Materials & Resources</h4>
+      <span class="badge bg-light text-secondary border px-3 py-1"><%= materials ? materials.length : 0 %> Available</span>
+    </div>
+
     <% if (materials && materials.length) { %>
       <div class="row g-3">
         <% materials.forEach(material => { %>
           <div class="col-12">
-            <div class="border rounded p-3">
-              <h5 class="mb-1"><%= material.title %></h5>
-              <% if (material.description) { %><p class="text-muted mb-2"><%= material.description %></p><% } %>
-              <% if (material.moduleId && material.moduleId.title) { %><div class="small text-primary mb-2">Topic: <%= material.moduleId.title %><%= material.topicNumber ? ' — Topic ' + material.topicNumber : '' %></div><% } %>
+            <div class="border rounded p-3 bg-white shadow-none hover-shadow">
+              <div class="d-flex justify-content-between align-items-start gap-2 flex-wrap mb-2">
+                <div>
+                  <h5 class="mb-1 fw-bold text-dark"><%= material.title %></h5>
+                  <% if (material.description) { %>
+                    <p class="text-muted small mb-2"><%= material.description %></p>
+                  <% } %>
+                  <% if (material.moduleId && material.moduleId.title) { %>
+                    <div class="small text-primary mb-2">
+                      <i class="bi bi-collection me-1"></i>Topic: <%= material.moduleId.title %><%= material.topicNumber ? ' — Topic #' + material.topicNumber : '' %>
+                    </div>
+                  <% } %>
+                </div>
+
+                <!-- Material Type Badge -->
+                <div>
+                  <% if (material.materialType === 'PDF') { %>
+                    <span class="badge bg-danger"><i class="bi bi-file-earmark-pdf me-1"></i>PDF Document</span>
+                  <% } else if (material.materialType === 'PPT') { %>
+                    <span class="badge bg-warning text-dark"><i class="bi bi-file-earmark-slides me-1"></i>PowerPoint (PPT/PPTX)</span>
+                  <% } else if (material.materialType === 'Video') { %>
+                    <span class="badge bg-danger"><i class="bi bi-youtube me-1"></i>YouTube Video</span>
+                  <% } else if (material.materialType === 'Link') { %>
+                    <span class="badge bg-info text-dark"><i class="bi bi-link-45deg me-1"></i>External Resource</span>
+                  <% } else { %>
+                    <span class="badge bg-secondary"><i class="bi bi-file-text me-1"></i>Written Notes</span>
+                  <% } %>
+                </div>
+              </div>
+
+              <!-- Media Display Based on Type -->
               <% if (material.materialType === 'Video') { %>
-                <% const ytMatch = material.materialUrl && material.materialUrl.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/|shorts\/))([A-Za-z0-9_-]{11})/); const videoEmbed = material.embedUrl || (ytMatch ? 'https://www.youtube.com/embed/' + ytMatch[1] : null); %>
-                <% if (videoEmbed) { %><div class="ratio ratio-16x9 mb-2"><iframe src="<%= videoEmbed %>" title="<%= material.title %>" allowfullscreen loading="lazy"></iframe></div><% } else { %><a class="btn btn-danger btn-sm" href="<%= material.materialUrl %>" target="_blank" rel="noopener">Watch video</a><% } %>
-              <% } else if (material.materialType === 'PDF' || material.materialType === 'Link') { %>
-                <a class="btn btn-primary btn-sm" href="<%= material.materialUrl %>" target="_blank" rel="noopener"><%= material.materialType === 'PDF' ? 'Open PDF' : 'Open link' %></a>
-              <% } else if (material.materialType === 'Text') { %><div class="bg-light rounded p-3"><%= material.content %></div><% } %>
-              <span class="badge bg-secondary mt-2"><%= material.materialType %></span>
+                <% 
+                  const ytMatch = material.materialUrl && material.materialUrl.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/|shorts\/))([A-Za-z0-9_-]{11})/); 
+                  const videoEmbed = material.embedUrl || (ytMatch ? 'https://www.youtube.com/embed/' + ytMatch[1] : null); 
+                %>
+                <% if (videoEmbed) { %>
+                  <div class="ratio ratio-16x9 mb-2 rounded overflow-hidden shadow-sm border" style="max-width: 720px;">
+                    <iframe src="<%= videoEmbed %>" title="<%= material.title %>" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen loading="lazy"></iframe>
+                  </div>
+                <% } else { %>
+                  <a class="btn btn-danger btn-sm" href="<%= material.materialUrl %>" target="_blank" rel="noopener">
+                    <i class="bi bi-youtube me-1"></i> Watch Video on YouTube
+                  </a>
+                <% } %>
+              <% } else if (material.materialType === 'PPT') { %>
+                <div class="d-flex align-items-center gap-2 flex-wrap mb-2">
+                  <a class="btn btn-warning text-dark btn-sm fw-semibold" href="<%= material.materialUrl %>" download target="_blank" rel="noopener">
+                    <i class="bi bi-file-earmark-slides-fill me-1 text-danger"></i> Open / Download Presentation (.pptx)
+                  </a>
+                  <% if (material.materialUrl && (material.materialUrl.startsWith('http://') || material.materialUrl.startsWith('https://'))) { %>
+                    <a class="btn btn-outline-secondary btn-sm" href="https://view.officeapps.live.com/op/view.aspx?src=<%= encodeURIComponent(material.materialUrl) %>" target="_blank" rel="noopener">
+                      <i class="bi bi-eye me-1"></i> Preview in Office Online
+                    </a>
+                  <% } %>
+                </div>
+              <% } else if (material.materialType === 'PDF') { %>
+                <div class="mb-2">
+                  <a class="btn btn-primary btn-sm" href="<%= material.materialUrl %>" target="_blank" rel="noopener">
+                    <i class="bi bi-file-earmark-pdf me-1"></i> Open PDF Document
+                  </a>
+                </div>
+              <% } else if (material.materialType === 'Link') { %>
+                <div class="mb-2">
+                  <a class="btn btn-outline-primary btn-sm" href="<%= material.materialUrl %>" target="_blank" rel="noopener">
+                    <i class="bi bi-box-arrow-up-right me-1"></i> Open External Link
+                  </a>
+                </div>
+              <% } else if (material.materialType === 'Text') { %>
+                <div class="bg-light rounded p-3 small mb-2 border"><%= material.content %></div>
+              <% } %>
             </div>
           </div>
         <% }) %>
       </div>
-    <% } else { %><p class="text-muted mb-0">No additional materials have been published for this course yet.</p><% } %>
+    <% } else { %>
+      <div class="text-center py-4 text-muted">
+        <i class="bi bi-folder2-open fs-2 d-block mb-2 text-secondary"></i>
+        No additional study materials have been published for this course yet.
+      </div>
+    <% } %>
   </div>
 </div>

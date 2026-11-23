@@ -1,3 +1,4 @@
+
 {
   "name": "focuslearn",
   "version": "1.0.0",
@@ -28,6 +29,7 @@
     "ejs": "^3.1.10",
     "express": "^4.21.2",
     "express-session": "^1.18.1",
+    "google-auth-library": "^11.3.4",
     "helmet": "^8.0.0",
     "method-override": "^3.0.0",
     "mongoose": "^8.9.5",
