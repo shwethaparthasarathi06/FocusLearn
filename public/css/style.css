@@ -661,6 +661,86 @@ body {
     text-decoration: none;
 }
 
+/* --- Segmented Role Toggle (Student vs Admin - Reference Design) --- */
+.role-toggle-container {
+    display: flex;
+    justify-content: center;
+}
+
+.role-toggle-bar {
+    display: flex;
+    background: #ede9fe;
+    border-radius: 50px;
+    padding: 5px;
+    width: 100%;
+}
+
+.role-toggle-btn {
+    flex: 1;
+    border: none;
+    background: transparent;
+    color: #475569;
+    font-weight: 600;
+    font-size: 15px;
+    padding: 10px 18px;
+    border-radius: 50px;
+    cursor: pointer;
+    transition: all 0.25s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.role-toggle-btn.active {
+    background: #6d5dfc;
+    color: #ffffff !important;
+    box-shadow: 0 4px 14px rgba(109, 93, 252, 0.35);
+}
+
+.role-toggle-btn:hover:not(.active) {
+    color: #1e1b4b;
+    background: rgba(255, 255, 255, 0.4);
+}
+
+/* --- Auth Divider --- */
+.auth-divider {
+    display: flex;
+    align-items: center;
+    text-align: center;
+    margin: 18px 0;
+    color: #94a3b8;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 1px;
+}
+
+.auth-divider::before,
+.auth-divider::after {
+    content: '';
+    flex: 1;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.auth-divider span {
+    padding: 0 14px;
+}
+
+/* --- Google Sign-in Wrapper --- */
+.google-signin-wrapper {
+    display: flex;
+    justify-content: center;
+    width: 100%;
+}
+
+.google-signin-wrapper iframe {
+    margin: 0 auto !important;
+}
+
+#google-auth-alert {
+    max-width: 450px;
+    margin: 0 auto 15px;
+}
+
 /* --- Home Page Hero & Features --- */
 .hero-banner {
     background: linear-gradient(135deg, #9990f5, #6c5ce7);
@@ -2994,4 +3074,212 @@ body {
     font-size: 0.78rem;
     color: #94a3b8;
     white-space: nowrap;
+}
+/* Card Panel & Progress Bar (Matching Reference Images) */
+.card-panel {
+    background: white;
+    border-radius: 16px;
+    padding: 25px;
+    border: 1px solid var(--card-border);
+    margin-bottom: 30px;
+}
+
+.progress-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+}
+
+.progress-bar-bg {
+    height: 12px;
+    background-color: #eee;
+    border-radius: 6px;
+    overflow: hidden;
+    margin-bottom: 15px;
+}
+
+.progress-bar-fill-100 {
+    width: 100%;
+    height: 100%;
+    background: var(--primary-purple);
+}
+
+.progress-bar-fill-75 {
+    width: 75%;
+    height: 100%;
+    background: var(--primary-purple);
+}
+
+.progress-bar-fill-50 {
+    width: 50%;
+    height: 100%;
+    background: var(--primary-purple);
+}
+
+.progress-bar-fill-25 {
+    width: 25%;
+    height: 100%;
+    background: var(--primary-purple);
+}
+
+.btn-sidebar-auth {
+    display: block;
+    width: 100%;
+    text-align: center;
+    padding: 10px 14px;
+    border-radius: 8px;
+    background: #383737;
+    color: white;
+    text-decoration: none;
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    transition: background 0.2s;
+    border: none;
+}
+
+.btn-sidebar-auth:hover {
+    background: #4a4949;
+    color: white;
+}
+
+.btn-sidebar-active {
+    background: var(--primary-purple) !important;
+    color: white !important;
+}
+
+.btn-module-pdf {
+    display: inline-flex;
+    align-items: center;
+    padding: 6px 14px;
+    font-size: 13px;
+    font-weight: 500;
+    color: #7b71e8;
+    background: transparent;
+    border: 1px solid #c5bdfb;
+    border-radius: 6px;
+    text-decoration: none;
+    transition: all 0.2s ease;
+}
+
+.btn-module-pdf:hover {
+    background: #f0eeff;
+    border-color: #9990f5;
+    color: #6457db;
+}
+\n==========================================================================
+   Student Portal: Profile, Quiz History, Performance, Password Change
+   ========================================================================== */
+
+.sidebar-section-divider {
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    color: #94a3b8;
+    padding: 16px 20px 6px;
+    text-transform: uppercase;
+}
+
+.sidebar-user-link {
+    text-decoration: none;
+    color: inherit;
+    display: block;
+    transition: opacity 0.2s;
+}
+
+.sidebar-user-link:hover {
+    opacity: 0.9;
+}
+
+.profile-avatar-circle {
+    width: 88px;
+    height: 88px;
+    border-radius: 50%;
+    background: var(--primary-gradient, linear-gradient(135deg, #9990f5, #c5bdfb));
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2.4rem;
+    font-weight: 700;
+    box-shadow: 0 8px 20px rgba(153, 144, 245, 0.35);
+}
+
+.feature-icon-circle {
+    width: 52px;
+    height: 52px;
+    border-radius: 50%;
+    background: rgba(153, 144, 245, 0.12);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.hover-lift {
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.hover-lift:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 10px 24px rgba(0, 0, 0, 0.08);
+}
+
+.question-review-card {
+    border-left: 5px solid transparent;
+    transition: all 0.2s ease;
+}
+
+.question-review-card.border-success {
+    border-left-color: #28a745 !important;
+}
+
+.question-review-card.border-danger {
+    border-left-color: #dc3545 !important;
+}
+
+@media (min-width: 768px) {
+    .border-end-md {
+        border-right: 1px solid #e2e8f0;
+    }
+}
+
+.letter-spacing-1 {
+    letter-spacing: 0.08em;
+}
+
+.table th {
+    font-weight: 600;
+    font-size: 0.85rem;
+    letter-spacing: 0.03em;
+    color: #475569;
+}
+
+/* FocusLearn Global Course UI Simplification - Topic Tags & Module Layout */
+.module-topics-section {
+    background: #fbfbfe;
+    border: 1px solid #eef0f8;
+    border-radius: 12px;
+    padding: 12px 16px;
+}
+
+.topic-tag {
+    background-color: #ffffff;
+    color: #475569;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    font-size: 0.82rem;
+    font-weight: 500;
+    padding: 5px 12px;
+    display: inline-flex;
+    align-items: center;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+    transition: all 0.2s ease;
+}
+
+.topic-tag:hover {
+    background-color: #f0eeff;
+    border-color: #7b71e8;
+    color: #5b4fd6;
+    transform: translateY(-1px);
 }

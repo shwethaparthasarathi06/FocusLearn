@@ -1,292 +1,446 @@
+
 <%- include('../partials/header.html') %>
 <%- include('../partials/sidebar.html') %>
 
 <div class="main-content">
-  <%- include('../partials/flash.html') %>
+    <%- include('../partials/flash.html') %>
 
-  <!-- Breadcrumb Navigation -->
-  <div class="breadcrumb-box mb-3">
-    <a href="/courses" class="back-link text-decoration-none">
-      <i class="bi bi-arrow-left me-1"></i> Back to all courses
-    </a>
-  </div>
-
-  <!-- Course Banner -->
-  <div class="course-detail-banner card shadow-sm border-0 p-4 mb-4">
-    <div class="d-flex align-items-center gap-4 flex-wrap">
-      <% if (course.image) { %>
-        <img src="<%= course.image %>" alt="<%= course.title %>" class="course-banner-img rounded shadow-sm" style="width: 120px; height: 120px; object-fit: cover;">
-      <% } %>
-      <div class="flex-grow-1">
-        <div class="d-flex align-items-center gap-2 mb-2">
-          <span class="badge bg-primary px-3 py-1 fs-6"><%= course.code %></span>
-          <span class="text-muted small">&bull; <%= course.category || 'Master of Computer Applications' %></span>
-          <% if (locals.isAuthenticated && locals.currentUser && locals.currentUser.role === 'admin') { %>
-            <a href="/admin/modules?courseId=<%= course._id %>" class="badge bg-warning text-dark text-decoration-none ms-auto">
-              <i class="bi bi-plus-circle me-1"></i> Admin: Add Topic
-            </a>
-          <% } %>
-        </div>
-        <h1 class="course-banner-title fw-bold mb-2"><%= course.title %></h1>
-        <p class="course-banner-desc text-muted mb-3"><%= course.description %></p>
-        
-        <div class="d-flex align-items-center gap-4 flex-wrap text-secondary small fw-semibold">
-          <span><i class="bi bi-clock me-1 text-primary"></i> <%= course.durationHours %> Total Hours</span>
-          <span><i class="bi bi-collection me-1 text-success"></i> <%= modules.length %> Learning Modules</span>
-          <span><i class="bi bi-patch-check-fill me-1 text-warning"></i> <%= Object.keys(quizzesByModule || {}).length %> Mastery Quizzes</span>
-          <% if (progress && modules.length > 0) { %>
-            <span><i class="bi bi-check-circle-fill me-1 text-success"></i> <%= progress.completedModules.length %>/<%= modules.length %> Completed (<%= progress.completionPercentage %>%)</span>
-          <% } %>
-        </div>
-      </div>
-    </div>
-
-    <!-- Course Progress Bar -->
-    <% if (progress && modules.length > 0) { %>
-      <div class="mt-4 pt-3 border-top">
-        <div class="d-flex justify-content-between align-items-center mb-1">
-          <span class="fw-bold small text-secondary">Your Overall Course Progress</span>
-          <span class="fw-bold text-primary"><%= progress.completionPercentage %>%</span>
-        </div>
-        <div class="progress" style="height: 10px;">
-          <div class="progress-bar progress-bar-striped bg-success" role="progressbar" style="width: <%= progress.completionPercentage %>%;"></div>
-        </div>
-      </div>
-    <% } %>
-
-    <!-- Course Redo Functionality (Allowed Only Once per Course) -->
-    <% if (typeof progress !== 'undefined' && progress) { %>
-      <% if (typeof canRedo !== 'undefined' && canRedo) { %>
-        <div class="alert alert-info d-flex justify-content-between align-items-center flex-wrap gap-3 mt-4 mb-0 border-0 shadow-sm">
-          <div>
-            <div class="fw-bold text-dark fs-6">
-              <i class="bi bi-arrow-repeat text-primary me-2 fs-5"></i> Course Completed – Redo Available
-            </div>
-            <div class="small text-muted mt-1">
-              You are permitted <strong>1 Redo Attempt</strong> for this course with an alternate set of 10-Question Redo Assessments.
-            </div>
-          </div>
-          <form method="POST" action="/courses/<%= course.slug %>/redo" class="d-inline"
-                onsubmit="return confirm('Start your 1 permitted redo attempt for <%= course.title %>? You will receive alternate redo quizzes.')">
-            <button type="submit" class="btn btn-primary px-3 py-2 fw-semibold shadow-sm">
-              <i class="bi bi-arrow-repeat me-1"></i> Start Redo Course (1 Attempt Allowed)
-            </button>
-          </form>
-        </div>
-      <% } else if (typeof isRedoInProgress !== 'undefined' && isRedoInProgress) { %>
-        <div class="alert alert-warning d-flex justify-content-between align-items-center flex-wrap gap-3 mt-4 mb-0 border-0 shadow-sm">
-          <div>
-            <div class="fw-bold text-dark fs-6">
-              <i class="bi bi-clock-history text-warning me-2 fs-5"></i> Course Redo Attempt In Progress
-            </div>
-            <div class="small text-muted mt-1">
-              You are currently working on your one permitted redo attempt. Take the <strong>Course Redo Quizzes</strong> below.
-              (<%= progress.completedRedoModules ? progress.completedRedoModules.length : 0 %>/<%= modules.length %> Redo Modules Completed)
-            </div>
-          </div>
-          <span class="badge bg-warning text-dark px-3 py-2 fs-6">
-            <i class="bi bi-arrow-repeat me-1"></i> Redo Active
-          </span>
-        </div>
-      <% } else if (typeof isRedoCompleted !== 'undefined' && isRedoCompleted) { %>
-        <div class="alert alert-secondary d-flex justify-content-between align-items-center flex-wrap gap-3 mt-4 mb-0 border-0 shadow-sm">
-          <div>
-            <div class="fw-bold text-dark fs-6">
-              <i class="bi bi-patch-check-fill text-success me-2 fs-5"></i> Course Redo Attempt Completed
-            </div>
-            <div class="small text-muted mt-1">
-              You have completed your 1 permitted redo attempt for this course. (Max 1 redo allowed).
-            </div>
-          </div>
-          <button class="btn btn-outline-secondary btn-sm" disabled>
-            <i class="bi bi-lock-fill me-1"></i> Redo Limit Reached
-          </button>
-        </div>
-      <% } %>
-    <% } %>
-  </div>
-
-  <!-- Learning Modules / Topics Section -->
-  <section class="mb-4">
-    <div class="d-flex justify-content-between align-items-center mb-3">
-      <h3 class="modules-heading fw-bold mb-0">
-        <i class="bi bi-journal-text me-2 text-primary"></i>Course Curriculum & Mastery Quizzes (<%= modules.length %> Modules)
-      </h3>
-      <% if (locals.isAuthenticated && locals.currentUser && locals.currentUser.role === 'admin') { %>
-        <a href="/admin/modules?courseId=<%= course._id %>" class="btn btn-sm btn-outline-primary">
-          <i class="bi bi-plus-lg me-1"></i> Add Module
+    <!-- Breadcrumb -->
+    <div class="breadcrumb-box mb-3">
+        <a href="/courses" class="back-link text-decoration-none">
+            <i class="bi bi-arrow-left me-1"></i> Back to all courses
         </a>
-      <% } %>
     </div>
 
-    <% if (modules && modules.length > 0) { %>
-      <div class="row g-3">
-        <% modules.forEach(mod => { 
-          const mid = mod._id.toString();
-          const quizDoc = quizzesByModule && quizzesByModule[mid];
-          const redoQuizDoc = (typeof redoQuizzesByModule !== 'undefined') && redoQuizzesByModule[mid];
-          const attempt = attemptsByModule && attemptsByModule[mid];
-          const redoAttempt = (typeof redoAttemptsByModule !== 'undefined') && redoAttemptsByModule[mid];
-          const isPassed = attempt && attempt.passed;
-          const isRedoPassed = redoAttempt && redoAttempt.passed;
-        %>
-          <div class="col-12">
-            <div class="card shadow-sm border-0 p-4 h-100 <%= isPassed ? 'border-start border-success border-4' : '' %>">
-              <div class="d-flex justify-content-between align-items-start flex-wrap gap-2 mb-2">
-                <div>
-                  <div class="d-flex align-items-center gap-2 mb-1 flex-wrap">
-                    <span class="badge bg-secondary">Module <%= mod.moduleNumber %></span>
-                    <% if (isPassed) { %>
-                      <span class="badge bg-success-subtle text-success border border-success-subtle">
-                        <i class="bi bi-check-circle-fill me-1"></i> Completed & Passed
-                      </span>
-                    <% } %>
-                    <% if (isRedoPassed) { %>
-                      <span class="badge text-white border" style="background-color: #7c3aed;">
-                        <i class="bi bi-arrow-repeat me-1"></i> Redo Passed
-                      </span>
-                    <% } %>
-                    <span class="text-muted small"><i class="bi bi-clock me-1"></i><%= mod.estimatedMinutes %> mins</span>
-                  </div>
-                  <h4 class="fw-bold text-dark mb-1"><%= mod.title %></h4>
-                  <p class="text-muted mb-2"><%= mod.summary %></p>
-                </div>
+    <!-- Course Banner -->
+    <div class="course-detail-banner card shadow-sm border-0 p-4 mb-4">
+        <div class="d-flex align-items-center gap-4 flex-wrap">
 
-                <!-- Status Badges (Original vs Redo Quiz) -->
-                <div>
-                  <div class="text-end d-flex flex-column gap-1 align-items-end">
-                    <% if (attempt) { %>
-                      <span class="badge <%= isPassed ? 'bg-success' : 'bg-warning text-dark' %> p-2">
-                        <i class="bi <%= isPassed ? 'bi-trophy-fill' : 'bi-arrow-clockwise' %> me-1"></i>
-                        Original Quiz: <%= attempt.score %>/10 (<%= attempt.percentage %>%)
-                      </span>
-                    <% } %>
-                    <% if (redoAttempt) { %>
-                      <span class="badge text-white p-2" style="background-color: #7c3aed;">
-                        <i class="bi bi-arrow-repeat me-1"></i>
-                        Redo Quiz: <%= redoAttempt.score %>/10 (<%= redoAttempt.percentage %>%)
-                      </span>
-                    <% } %>
-                  </div>
-                </div>
-              </div>
+            <% if (course.image) { %>
+                <img
+                    src="<%= course.image %>"
+                    alt="<%= course.title %>"
+                    class="course-banner-img rounded shadow-sm"
+                    style="width: 120px; height: 120px; object-fit: cover;"
+                >
+            <% } %>
 
-              <!-- Key Concepts Chips -->
-              <% if (mod.keyConcepts && mod.keyConcepts.length > 0) { %>
-                <div class="d-flex flex-wrap gap-1 mb-3">
-                  <% mod.keyConcepts.forEach(concept => { %>
-                    <span class="badge bg-light text-secondary border small">#<%= concept %></span>
-                  <% }) %>
-                </div>
-              <% } %>
+            <div class="flex-grow-1">
+                <div class="d-flex align-items-center gap-2 mb-2 flex-wrap">
+                    <span class="badge bg-primary px-3 py-1 fs-6">
+                        <%= course.code %>
+                    </span>
 
-              <!-- Sub-topics List (if available) -->
-              <% if (mod.topics && mod.topics.length > 1) { %>
-                <div class="bg-light p-3 rounded mb-3">
-                  <h6 class="fw-bold small text-muted text-uppercase mb-2">Sub-topics in this module:</h6>
-                  <ol class="mb-0 ps-3 small">
-                    <% mod.topics.forEach(t => { %>
-                      <li class="mb-1">
-                        <strong><%= t.title %></strong> (<%= t.estimatedMinutes %> mins)
-                        <% if (t.pdfUrl) { %>
-                          &mdash; <a href="<%= t.pdfUrl %>" target="_blank" class="text-danger text-decoration-none"><i class="bi bi-file-earmark-pdf"></i> PDF</a>
-                        <% } %>
-                      </li>
-                    <% }) %>
-                  </ol>
-                </div>
-              <% } %>
+                    <span class="text-muted small">
+                        &bull; <%= course.category || 'Master of Computer Applications' %>
+                    </span>
 
-              <!-- Action Buttons Row -->
-              <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 pt-3 border-top mt-2">
-                <div class="d-flex gap-2 flex-wrap">
-                  <!-- Study Room with Timer & PDF -->
-                  <a href="/study/room/<%= mod._id %>" class="btn btn-primary px-3 fw-semibold">
-                    <i class="bi bi-play-circle-fill me-1"></i> Study Room (Timer + PDF)
-                  </a>
-
-                  <!-- Read Lesson View -->
-                  <a href="/lessons/<%= mod._id %>" class="btn btn-outline-secondary px-3">
-                    <i class="bi bi-book-half me-1"></i> Read Notes
-                  </a>
-
-                  <!-- PDF Document Link -->
-                  <% if (mod.pdfUrl) { %>
-                    <a href="<%= mod.pdfUrl %>" target="_blank" class="btn btn-outline-danger px-3">
-                      <i class="bi bi-file-earmark-pdf-fill me-1"></i> Topic PDF
-                    </a>
-                  <% } %>
-                </div>
-
-                <!-- 10-Question Mastery Quiz & Redo Quiz Buttons -->
-                <div class="d-flex align-items-center gap-2 flex-wrap">
-                  <!-- Redo Quiz Button (Only active when Redo is in progress) -->
-                  <% if (typeof isRedoInProgress !== 'undefined' && isRedoInProgress) { %>
-                    <% if (redoQuizDoc) { %>
-                      <% if (isRedoPassed) { %>
-                        <div class="d-inline-flex align-items-center gap-1">
-                          <span class="badge text-white p-2" style="background-color: #7c3aed;">
-                            <i class="bi bi-patch-check-fill me-1"></i> Redo Passed (<%= redoAttempt.score %>/10)
-                          </span>
-                          <a href="/quizzes/<%= mod._id %>?type=redo" class="btn btn-sm btn-outline-primary">
-                            <i class="bi bi-arrow-clockwise me-1"></i> Retake Redo Quiz
-                          </a>
-                        </div>
-                      <% } else { %>
-                        <a href="/quizzes/<%= mod._id %>?type=redo" class="btn text-white fw-bold px-3 shadow-sm" style="background-color: #7c3aed;">
-                          <i class="bi bi-arrow-repeat me-1"></i> Take Redo 10-Q Quiz
+                    <% if (locals.isAuthenticated && locals.currentUser && locals.currentUser.role === 'admin') { %>
+                        <a
+                            href="/admin/modules?courseId=<%= course._id %>"
+                            class="badge bg-warning text-dark text-decoration-none ms-auto"
+                        >
+                            <i class="bi bi-plus-circle me-1"></i> Admin: Add Topic
                         </a>
-                      <% } %>
-                    <% } else { %>
-                      <span class="badge bg-light text-muted border p-2">Redo Quiz Being Prepared</span>
                     <% } %>
-                  <% } else { %>
-                    <!-- Original Quiz Button -->
-                    <% if (quizDoc) { %>
-                      <% if (isPassed) { %>
-                        <div class="d-inline-flex align-items-center gap-2">
-                          <span class="text-success small fw-bold">
-                            <i class="bi bi-patch-check-fill text-success fs-5"></i> Mastery Achieved
-                          </span>
-                          <a href="/quizzes/<%= mod._id %>" class="btn btn-sm btn-outline-success">
-                            <i class="bi bi-arrow-clockwise me-1"></i> Retake Quiz
-                          </a>
-                        </div>
-                      <% } else if (attempt) { %>
-                        <a href="/quizzes/<%= mod._id %>" class="btn btn-warning text-dark fw-bold px-3">
-                          <i class="bi bi-arrow-repeat me-1"></i> Retake 10-Q Quiz
-                        </a>
-                      <% } else { %>
-                        <a href="/quizzes/<%= mod._id %>" class="btn btn-success fw-bold px-3 shadow-sm">
-                          <i class="bi bi-patch-check-fill me-1"></i> Take 10-Question Quiz
-                        </a>
-                      <% } %>
-                    <% } else { %>
-                      <span class="badge bg-light text-muted border p-2">Quiz Being Prepared</span>
-                    <% } %>
-                  <% } %>
                 </div>
-              </div>
+
+                <h1 class="course-banner-title fw-bold mb-2">
+                    <%= course.title %>
+                </h1>
+
+                <p class="course-banner-desc text-muted mb-3">
+                    <%= course.description %>
+                </p>
+
+                <div class="d-flex align-items-center gap-4 flex-wrap text-secondary small fw-semibold">
+                    <span>
+                        <i class="bi bi-clock me-1 text-primary"></i>
+                        <%= course.durationHours %> Total Hours
+                    </span>
+
+                    <span>
+                        <i class="bi bi-collection me-1 text-success"></i>
+                        <%= modules.length %> Learning Modules
+                    </span>
+
+                    <span>
+                        <i class="bi bi-patch-check-fill me-1 text-warning"></i>
+                        <%= Object.keys(quizzesByModule || {}).length %> Mastery Quizzes
+                    </span>
+
+                    <% if (progress && modules.length > 0) { %>
+                        <span>
+                            <i class="bi bi-check-circle-fill me-1 text-success"></i>
+                            <%= progress.completedModules.length %>/<%= modules.length %>
+                            Completed (<%= progress.completionPercentage %>%)
+                        </span>
+                    <% } %>
+                </div>
             </div>
-          </div>
-        <% }) %>
-      </div>
-    <% } else { %>
-      <div class="card shadow-sm border-0 p-5 text-center">
-        <div class="mb-3 text-muted"><i class="bi bi-folder2-open fs-1"></i></div>
-        <h4 class="fw-bold">Modules Being Added</h4>
-        <p class="text-muted">Topics for <%= course.title %> are currently being compiled. Check out the study materials below or visit another course.</p>
-        <div>
-          <a href="/courses" class="btn btn-primary px-4">Browse Other Courses</a>
         </div>
-      </div>
-    <% } %>
-  </section>
 
-  <!-- Published Study Materials List -->
-  <div id="materials">
-    <%- include('../partials/materials-list.html') %>
-  </div>
+        <!-- Overall Course Progress -->
+        <% if (progress && modules.length > 0) { %>
+            <div class="mt-4 pt-3 border-top">
+                <div class="d-flex justify-content-between align-items-center mb-1">
+                    <span class="fw-bold small text-secondary">
+                        Your Overall Course Progress
+                    </span>
+
+                    <span class="fw-bold text-primary">
+                        <%= progress.completionPercentage %>%
+                    </span>
+                </div>
+
+                <div class="progress" style="height: 10px;">
+                    <div
+                        class="progress-bar progress-bar-striped bg-success"
+                        role="progressbar"
+                        style="width: <%= progress.completionPercentage %>%;">
+                    </div>
+                </div>
+            </div>
+        <% } %>
+
+        <!-- Course Redo Functionality -->
+        <% if (typeof progress !== 'undefined' && progress) { %>
+
+            <% if (typeof canRedo !== 'undefined' && canRedo) { %>
+
+                <div class="alert alert-info d-flex justify-content-between align-items-center flex-wrap gap-3 mt-4 mb-0 border-0 shadow-sm">
+                    <div>
+                        <div class="fw-bold text-dark fs-6">
+                            <i class="bi bi-arrow-repeat text-primary me-2 fs-5"></i>
+                            Course Completed – Redo Available
+                        </div>
+
+                        <div class="small text-muted mt-1">
+                            You are permitted <strong>1 Redo Attempt</strong>
+                            for this course with an alternate set of 10-Question Redo Assessments.
+                        </div>
+                    </div>
+
+                    <form
+                        method="POST"
+                        action="/courses/<%= course.slug %>/redo"
+                        class="d-inline"
+                        onsubmit="return confirm('Start your 1 permitted redo attempt for <%= course.title %>? You will receive alternate redo quizzes.')"
+                    >
+                        <button type="submit" class="btn btn-primary px-3 py-2 fw-semibold shadow-sm">
+                            <i class="bi bi-arrow-repeat me-1"></i>
+                            Start Redo Course (1 Attempt Allowed)
+                        </button>
+                    </form>
+                </div>
+
+            <% } else if (typeof isRedoInProgress !== 'undefined' && isRedoInProgress) { %>
+
+                <div class="alert alert-warning d-flex justify-content-between align-items-center flex-wrap gap-3 mt-4 mb-0 border-0 shadow-sm">
+                    <div>
+                        <div class="fw-bold text-dark fs-6">
+                            <i class="bi bi-clock-history text-warning me-2 fs-5"></i>
+                            Course Redo Attempt In Progress
+                        </div>
+
+                        <div class="small text-muted mt-1">
+                            You are currently working on your one permitted redo attempt.
+                            Take the <strong>Course Redo Quizzes</strong> below.
+                            (<%= progress.completedRedoModules ? progress.completedRedoModules.length : 0 %>/<%= modules.length %> Redo Modules Completed)
+                        </div>
+                    </div>
+
+                    <span class="badge bg-warning text-dark px-3 py-2 fs-6">
+                        <i class="bi bi-arrow-repeat me-1"></i> Redo Active
+                    </span>
+                </div>
+
+            <% } else if (typeof isRedoCompleted !== 'undefined' && isRedoCompleted) { %>
+
+                <div class="alert alert-secondary d-flex justify-content-between align-items-center flex-wrap gap-3 mt-4 mb-0 border-0 shadow-sm">
+                    <div>
+                        <div class="fw-bold text-dark fs-6">
+                            <i class="bi bi-patch-check-fill text-success me-2 fs-5"></i>
+                            Course Redo Attempt Completed
+                        </div>
+
+                        <div class="small text-muted mt-1">
+                            You have completed your 1 permitted redo attempt for this course.
+                            (Max 1 redo allowed).
+                        </div>
+                    </div>
+
+                    <button class="btn btn-outline-secondary btn-sm" disabled>
+                        <i class="bi bi-lock-fill me-1"></i> Redo Limit Reached
+                    </button>
+                </div>
+
+            <% } %>
+        <% } %>
+    </div>
+
+    <!-- Learning Modules -->
+    <section class="mb-4">
+
+        <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+            <h3 class="modules-heading fw-bold mb-0">
+                <i class="bi bi-journal-text me-2 text-primary"></i>
+                Course Curriculum & Mastery Quizzes (<%= modules.length %> Modules)
+            </h3>
+
+            <% if (locals.isAuthenticated && locals.currentUser && locals.currentUser.role === 'admin') { %>
+                <a
+                    href="/admin/modules?courseId=<%= course._id %>"
+                    class="btn btn-sm btn-outline-primary"
+                >
+                    <i class="bi bi-plus-lg me-1"></i> Add Module
+                </a>
+            <% } %>
+        </div>
+
+        <% if (modules && modules.length > 0) { %>
+
+            <div class="row g-3">
+
+                <% modules.forEach(mod => {
+
+                    const mid = mod._id.toString();
+
+                    const quizDoc = quizzesByModule && quizzesByModule[mid];
+
+                    const redoQuizDoc =
+                        (typeof redoQuizzesByModule !== 'undefined') &&
+                        redoQuizzesByModule[mid];
+
+                    const attempt = attemptsByModule && attemptsByModule[mid];
+
+                    const redoAttempt =
+                        (typeof redoAttemptsByModule !== 'undefined') &&
+                        redoAttemptsByModule[mid];
+
+                    const isPassed = attempt && attempt.passed;
+
+                    const isRedoPassed = redoAttempt && redoAttempt.passed;
+
+                %>
+
+                    <div class="col-12">
+
+                        <div class="card shadow-sm border-0 p-4 h-100 <%= isPassed ? 'border-start border-success border-4' : '' %>">
+
+                            <!-- Module Heading -->
+                            <div class="d-flex justify-content-between align-items-start flex-wrap gap-2 mb-3">
+
+                                <div>
+                                    <div class="d-flex align-items-center gap-2 mb-2 flex-wrap">
+
+                                        <span class="badge bg-secondary">
+                                            Module <%= mod.moduleNumber %>
+                                        </span>
+
+                                        <% if (isPassed) { %>
+                                            <span class="badge bg-success-subtle text-success border border-success-subtle">
+                                                <i class="bi bi-check-circle-fill me-1"></i>
+                                                Completed & Passed
+                                            </span>
+                                        <% } %>
+
+                                        <% if (isRedoPassed) { %>
+                                            <span class="badge text-white border" style="background-color: #7c3aed;">
+                                                <i class="bi bi-arrow-repeat me-1"></i>
+                                                Redo Passed
+                                            </span>
+                                        <% } %>
+
+                                        <span class="text-muted small">
+                                            <i class="bi bi-clock me-1"></i>
+                                            <%= mod.estimatedMinutes %> minutes
+                                        </span>
+
+                                    </div>
+
+                                    <h4 class="fw-bold text-dark mb-1">
+                                        Module <%= mod.moduleNumber %> – <%= mod.title %>
+                                    </h4>
+
+                                    <p class="text-muted mb-0">
+                                        <%= mod.summary %>
+                                    </p>
+                                </div>
+
+                                <!-- Quiz Attempt Scores -->
+                                <div>
+                                    <div class="text-end d-flex flex-column gap-1 align-items-end">
+
+                                        <% if (attempt) { %>
+                                            <span class="badge <%= isPassed ? 'bg-success' : 'bg-warning text-dark' %> p-2">
+                                                <i class="bi <%= isPassed ? 'bi-trophy-fill' : 'bi-arrow-clockwise' %> me-1"></i>
+                                                Original Quiz: <%= attempt.score %>/10 (<%= attempt.percentage %>%)
+                                            </span>
+                                        <% } %>
+
+                                        <% if (redoAttempt) { %>
+                                            <span class="badge text-white p-2" style="background-color: #7c3aed;">
+                                                <i class="bi bi-arrow-repeat me-1"></i>
+                                                Redo Quiz: <%= redoAttempt.score %>/10 (<%= redoAttempt.percentage %>%)
+                                            </span>
+                                        <% } %>
+
+                                    </div>
+                                </div>
+
+                            </div>
+
+                            <!-- Action Buttons -->
+                            <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 pt-3 border-top mt-2">
+
+                                <!-- Study Room -->
+                                <div>
+                                    <a
+                                        href="/study/room/<%= mod._id %>"
+                                        class="btn btn-primary px-3 fw-semibold"
+                                    >
+                                        <i class="bi bi-play-circle-fill me-1"></i>
+                                        Study Room (Timer + PDF)
+                                    </a>
+                                </div>
+
+                                <!-- Quiz Buttons -->
+                                <div class="d-flex align-items-center gap-2 flex-wrap">
+
+                                    <% if (typeof isRedoInProgress !== 'undefined' && isRedoInProgress) { %>
+
+                                        <% if (redoQuizDoc) { %>
+
+                                            <% if (isRedoPassed) { %>
+
+                                                <div class="d-inline-flex align-items-center gap-1">
+                                                    <span class="badge text-white p-2" style="background-color: #7c3aed;">
+                                                        <i class="bi bi-patch-check-fill me-1"></i>
+                                                        Redo Passed (<%= redoAttempt.score %>/10)
+                                                    </span>
+
+                                                    <a
+                                                        href="/quizzes/<%= mod._id %>?type=redo"
+                                                        class="btn btn-sm btn-outline-primary"
+                                                    >
+                                                        <i class="bi bi-arrow-clockwise me-1"></i>
+                                                        Retake Redo Quiz
+                                                    </a>
+                                                </div>
+
+                                            <% } else { %>
+
+                                                <a
+                                                    href="/quizzes/<%= mod._id %>?type=redo"
+                                                    class="btn text-white fw-bold px-3 shadow-sm"
+                                                    style="background-color: #7c3aed;"
+                                                >
+                                                    <i class="bi bi-arrow-repeat me-1"></i>
+                                                    Take Redo 10-Q Quiz
+                                                </a>
+
+                                            <% } %>
+
+                                        <% } else { %>
+
+                                            <span class="badge bg-light text-muted border p-2">
+                                                Redo Quiz Being Prepared
+                                            </span>
+
+                                        <% } %>
+
+                                    <% } else { %>
+
+                                        <!-- Original Quiz -->
+
+                                        <% if (quizDoc) { %>
+
+                                            <% if (isPassed) { %>
+
+                                                <div class="d-inline-flex align-items-center gap-2">
+                                                    <span class="text-success small fw-bold">
+                                                        <i class="bi bi-patch-check-fill text-success fs-5"></i>
+                                                        Mastery Achieved
+                                                    </span>
+
+                                                    <a
+                                                        href="/quizzes/<%= mod._id %>"
+                                                        class="btn btn-sm btn-outline-success"
+                                                    >
+                                                        <i class="bi bi-arrow-clockwise me-1"></i>
+                                                        Retake Quiz
+                                                    </a>
+                                                </div>
+
+                                            <% } else if (attempt) { %>
+
+                                                <a
+                                                    href="/quizzes/<%= mod._id %>"
+                                                    class="btn btn-warning text-dark fw-bold px-3"
+                                                >
+                                                    <i class="bi bi-arrow-repeat me-1"></i>
+                                                    Retake 10-Q Quiz
+                                                </a>
+
+                                            <% } else { %>
+
+                                                <a
+                                                    href="/quizzes/<%= mod._id %>"
+                                                    class="btn btn-success fw-bold px-3 shadow-sm"
+                                                >
+                                                    <i class="bi bi-patch-check-fill me-1"></i>
+                                                    Take 10-Question Quiz
+                                                </a>
+
+                                            <% } %>
+
+                                        <% } else { %>
+
+                                            <span class="badge bg-light text-muted border p-2">
+                                                Quiz Being Prepared
+                                            </span>
+
+                                        <% } %>
+
+                                    <% } %>
+
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+
+                <% }) %>
+
+            </div>
+
+        <% } else { %>
+
+            <div class="card shadow-sm border-0 p-5 text-center">
+
+                <div class="mb-3 text-muted">
+                    <i class="bi bi-folder2-open fs-1"></i>
+                </div>
+
+                <h4 class="fw-bold">Modules Being Added</h4>
+
+                <p class="text-muted">
+                    Topics for <%= course.title %> are currently being compiled.
+                    Check back later or visit another course.
+                </p>
+
+                <div>
+                    <a href="/courses" class="btn btn-primary px-4">
+                        Browse Other Courses
+                    </a>
+                </div>
+
+            </div>
+
+        <% } %>
+
+    </section>
 </div>
 
 <%- include('../partials/footer.html') %>
