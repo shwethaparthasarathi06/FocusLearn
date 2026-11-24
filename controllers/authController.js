@@ -107,7 +107,11 @@ exports.postLogin = async (req, res, next) => {
     }
 
     // 6. Establish authenticated session
-    req.session.userId = user._id;
+      req.session.userId = user._id;
+      // Update last login date for both admin and student
+      user.lastLoginDate = new Date();
+      user.lastLoginAt = user.lastLoginDate;
+      await user.save();
 
     if (user.role === 'admin') {
       req.flash('success', `Welcome to the Admin Portal, ${user.name}!`);
@@ -326,7 +330,11 @@ exports.googleAuth = async (req, res, next) => {
     }
 
     // Establish student session
-    req.session.userId = user._id;
+      req.session.userId = user._id;
+      // Update last login date for both admin and student
+      user.lastLoginDate = new Date();
+      user.lastLoginAt = user.lastLoginDate;
+      await user.save();
     req.flash('success', `Welcome back, ${user.name}!`);
 
     return res.json({

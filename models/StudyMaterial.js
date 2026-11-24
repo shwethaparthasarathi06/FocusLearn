@@ -29,7 +29,7 @@ const studyMaterialSchema = new mongoose.Schema(
 
     materialType: {
       type: String,
-      enum: ['PDF', 'Video', 'Link', 'Text'],
+      enum: ['PDF', 'Video', 'Link', 'Text', 'PPT'],
       required: true
     },
 

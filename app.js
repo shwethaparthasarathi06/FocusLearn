@@ -36,15 +36,10 @@ async function startServer() {
     // 1. Connect to Database (Persistent or In-Memory Dev Fallback)
     const dbInfo = await connectDB();
 
-    // 2. Ensure initial curriculum is seeded and synced with latest module specifications
+    // 2. Seed initial curriculum only if database has no courses yet
     const courseCount = await Course.countDocuments();
-    const dsCourse = await Course.findOne({ code: 'DS' });
-    const dsModulesCount = dsCourse ? await Module.countDocuments({ courseId: dsCourse._id }) : 0;
-    const firstModule = dsCourse ? await Module.findOne({ courseId: dsCourse._id, moduleNumber: 1 }) : null;
-    const hasStalePdf = firstModule && firstModule.topics && firstModule.topics[0] && firstModule.topics[0].pdfUrl && firstModule.topics[0].pdfUrl.includes('01_What_Are_Data_Structures');
-
-    if (courseCount === 0 || dsModulesCount !== 3 || (dsCourse && dsCourse.durationHours !== 2.2) || hasStalePdf) {
-      console.log('[Bootstrap] Syncing curriculum and materials with database...');
+    if (courseCount === 0) {
+      console.log('[Bootstrap] Empty database detected — seeding initial curriculum...');
       await seedDatabase();
     }
 
@@ -57,7 +52,19 @@ async function startServer() {
     app.use(express.urlencoded({ extended: true }));
     app.use(express.json());
 
-    // 5. Static Files Serving
+    // Method Override Middleware for HTML forms using ?_method=PUT / ?_method=DELETE
+    app.use((req, res, next) => {
+      if (req.query && req.query._method) {
+        req.method = req.query._method.toUpperCase();
+      } else if (req.body && req.body._method) {
+        req.method = req.body._method.toUpperCase();
+        delete req.body._method;
+      }
+      next();
+    });
+
+    // 5. Static Files Serving (Serves /materials direct & subfolders, plus all /public assets)
+    app.use('/materials', express.static(path.join(__dirname, 'public/materials')));
     app.use(express.static(path.join(__dirname, 'public')));
 
     // 6. Express Session Configuration

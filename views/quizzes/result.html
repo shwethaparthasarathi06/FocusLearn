@@ -32,18 +32,15 @@
             </div>
         <% } else { %>
             <h2 class="result-title-fail">
-                <i class="bi bi-exclamation-octagon-fill me-1"></i> Revision Recommended
+                <i class="bi bi-exclamation-octagon-fill me-1"></i> Quiz Not Passed
             </h2>
             <p class="result-desc-text">
-                Thank you for giving this quiz your best effort! You scored <%= attempt.score %>/10. Review the answers, practise a little more, and try again — every attempt helps you improve.
+                You scored <%= attempt.score %>/10 (<%= attempt.percentage %>%). Because this quiz was not passed, retaking the quiz and viewing this topic are now locked.
             </p>
             <!-- Action buttons for failed -->
             <div class="result-actions-row">
                 <a href="/quizzes/history/<%= attempt._id %>" class="btn btn-primary btn-result-action">
                     <i class="bi bi-file-earmark-text me-1"></i> Review Questions
-                </a>
-                <a href="/study/room/<%= moduleDoc._id %>" class="btn-focus btn-result-action">
-                    <i class="bi bi-arrow-repeat me-1"></i> Redo Course
                 </a>
                 <a href="/quizzes/history" class="btn btn-outline-secondary btn-result-action">
                     <i class="bi bi-clock-history me-1"></i> Quiz History
@@ -55,7 +52,5 @@
         <% } %>
     </div>
 </div>
-
-<%- include('../partials/materials-list.html') %>
 
 <%- include('../partials/footer.html') %>

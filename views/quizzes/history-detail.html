@@ -21,12 +21,13 @@
             </p>
         </div>
         <div class="d-flex gap-2">
-            <a href="/quizzes/history" class="btn btn-outline-secondary">
-                <i class="bi bi-arrow-left me-1"></i> Back to History
-            </a>
-            <% if (moduleDoc) { %>
-                <a href="/quizzes/<%= moduleDoc._id %>" class="btn-focus">
-                    <i class="bi bi-arrow-clockwise me-1"></i> Retake Quiz
+            <% if (typeof from !== 'undefined' && from === 'course' && course) { %>
+                <a href="/courses/<%= course.slug %>" class="btn btn-outline-secondary">
+                    <i class="bi bi-arrow-left me-1"></i> Back to Course
+                </a>
+            <% } else { %>
+                <a href="/quizzes/history" class="btn btn-outline-secondary">
+                    <i class="bi bi-arrow-left me-1"></i> Back to Quiz History
                 </a>
             <% } %>
         </div>
@@ -53,28 +54,21 @@
 
             <div class="col-lg-9 col-md-8">
                 <div class="row g-3 text-center text-sm-start">
-                    <div class="col-sm-6 col-lg-3">
+                    <div class="col-sm-4">
                         <div class="p-2 rounded bg-light border">
                             <span class="text-muted small d-block">Attempt Date & Time</span>
                             <strong class="text-dark"><%= attempt.formattedDate %></strong>
                             <div class="small text-muted"><%= attempt.formattedTime %></div>
                         </div>
                     </div>
-                    <div class="col-sm-6 col-lg-3">
-                        <div class="p-2 rounded bg-light border">
-                            <span class="text-muted small d-block">Time Taken</span>
-                            <strong class="text-dark"><%= attempt.timeSpentFormatted %></strong>
-                            <div class="small text-muted">Study timer record</div>
-                        </div>
-                    </div>
-                    <div class="col-sm-6 col-lg-3">
+                    <div class="col-sm-4">
                         <div class="p-2 rounded bg-light border">
                             <span class="text-muted small d-block">Passing Standard</span>
                             <strong class="text-dark">&ge; <%= attempt.passingScore %> / <%= attempt.totalQuestions %></strong>
                             <div class="small text-muted">60% Benchmark</div>
                         </div>
                     </div>
-                    <div class="col-sm-6 col-lg-3">
+                    <div class="col-sm-4">
                         <div class="p-2 rounded bg-light border">
                             <span class="text-muted small d-block">Attempt Sequence</span>
                             <strong class="text-dark">Attempt #<%= attempt.attemptNumber %></strong>
@@ -190,21 +184,20 @@
 
     <!-- Bottom Actions -->
     <div class="d-flex justify-content-between align-items-center mt-4 pt-3 border-top">
-        <a href="/quizzes/history" class="btn btn-outline-secondary">
-            <i class="bi bi-arrow-left me-1"></i> Back to Quiz History
-        </a>
-        <div class="d-flex gap-2">
+        <% if (typeof from !== 'undefined' && from === 'course' && course) { %>
+            <a href="/courses/<%= course.slug %>" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left me-1"></i> Back to Course
+            </a>
+        <% } else { %>
+            <a href="/quizzes/history" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left me-1"></i> Back to Quiz History
+            </a>
             <% if (course) { %>
                 <a href="/courses/<%= course.slug %>" class="btn btn-outline-primary">
                     <i class="bi bi-journal-bookmark me-1"></i> Course Overview
                 </a>
             <% } %>
-            <% if (moduleDoc) { %>
-                <a href="/quizzes/<%= moduleDoc._id %>" class="btn-focus">
-                    <i class="bi bi-arrow-clockwise me-1"></i> Retake This Quiz
-                </a>
-            <% } %>
-        </div>
+        <% } %>
     </div>
 </div>
 

@@ -27,6 +27,14 @@ exports.getQuiz = async (req, res, next) => {
       return res.redirect(`/lessons/${moduleDoc._id}`);
     }
 
+    if (req.session.userId) {
+      const priorAttempt = await QuizAttempt.findOne({ userId: req.session.userId, moduleId: moduleDoc._id }).select('_id passed').lean();
+      if (priorAttempt) {
+        req.flash('info', 'You have already completed this quiz. Retaking the quiz is not permitted, but you can review your answers.');
+        return res.redirect(`/quizzes/history/${priorAttempt._id}`);
+      }
+    }
+
     // Security: Clone questions and strip correct answers before passing to view
     const sanitizedQuestions = quiz.questions.map(q => ({
       _id: q._id,
@@ -73,6 +81,14 @@ exports.postSubmitQuiz = async (req, res, next) => {
     if (!quiz || quiz.questions.length !== 10 || quiz.questions.some(q => q.options.length !== 4)) {
       req.flash('error', 'A valid 10-question quiz is not available for this topic.');
       return res.redirect('/courses');
+    }
+
+    if (req.session.userId) {
+      const priorAttempt = await QuizAttempt.findOne({ userId: req.session.userId, moduleId: moduleDoc._id }).select('_id passed').lean();
+      if (priorAttempt) {
+        req.flash('info', 'You have already completed this quiz. Retaking the quiz is not permitted, but you can review your answers.');
+        return res.redirect(`/quizzes/history/${priorAttempt._id}`);
+      }
     }
 
     // Authoritative Server-Side Answer Evaluation

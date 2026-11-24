@@ -221,6 +221,78 @@ exports.modules = async (req, res, next) => {
   }
 };
 
+// =========================================================================
+// 5. REGISTERED STUDENTS LIST
+// =========================================================================
+exports.registeredStudents = async (req, res, next) => {
+  try {
+    const page = parseInt(req.query.page) || 1;
+    const limit = 20;
+    const skip = (page - 1) * limit;
+    const search = (req.query.search || '').trim();
+    const sortBy = req.query.sortBy || 'name';
+
+    const filter = { role: 'student' };
+    if (search) {
+      const searchRegex = new RegExp(search, 'i');
+      filter.$or = [
+        { name: searchRegex },
+        { email: searchRegex }
+      ];
+    }
+
+    let sortObj = { name: 1 };
+    if (sortBy === 'login') {
+      sortObj = { lastLoginAt: -1, lastLoginDate: -1, createdAt: -1 };
+    } else if (sortBy === 'name-desc') {
+      sortObj = { name: -1 };
+    }
+
+    const total = await User.countDocuments(filter);
+    const students = await User.find(filter)
+      .sort(sortObj)
+      .skip(skip)
+      .limit(limit)
+      .select('name email lastLoginDate lastLoginAt role createdAt');
+
+    const totalPages = Math.ceil(total / limit) || 1;
+
+    res.render('admin/registered-students', {
+      pageTitle: 'Registered Students - FocusLearn',
+      students,
+      currentPage: page,
+      totalPages,
+      totalStudents: total,
+      search,
+      sortBy
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
+function normalizeMaterialInput(rawUrl) {
+  let clean = (rawUrl || '').trim();
+  if (!clean) return { materialType: 'PDF', pdfUrl: '', pptUrl: '', videoUrl: '' };
+  if (/youtube\.com|youtu\.be/i.test(clean)) {
+    return { materialType: 'Video', pdfUrl: '', pptUrl: '', videoUrl: clean };
+  }
+  if (!/^https?:\/\//i.test(clean)) {
+    clean = clean.replace(/\\/g, '/');
+    const pubIdx = clean.toLowerCase().lastIndexOf('/public/');
+    if (pubIdx !== -1) {
+      clean = clean.slice(pubIdx + '/public'.length);
+    } else {
+      clean = clean.replace(/^(\.\/)?public\//i, '/');
+    }
+    if (!clean.startsWith('/')) clean = '/' + clean;
+  }
+  if (/\.(pptx|ppt)$/i.test(clean)) {
+    return { materialType: 'PPT', pdfUrl: '', pptUrl: clean, videoUrl: '' };
+  }
+  return { materialType: 'PDF', pdfUrl: clean, pptUrl: '', videoUrl: '' };
+}
+
 exports.createModule = async (req, res, next) => {
   try {
     const { courseId, moduleNumber, title, summary, estimatedMinutes, pdfUrl, keyConcepts, content } = req.body;
@@ -243,7 +315,8 @@ exports.createModule = async (req, res, next) => {
       : [];
 
     const estMinutes = Number(estimatedMinutes) > 0 ? Number(estimatedMinutes) : 35;
-    const cleanPdf = pdfUrl ? pdfUrl.trim() : '';
+    const mat = normalizeMaterialInput(pdfUrl);
+    const topicUrl = mat.pptUrl || mat.pdfUrl || '';
 
     const newModule = await Module.create({
       courseId: course._id,
@@ -252,7 +325,10 @@ exports.createModule = async (req, res, next) => {
       slug,
       summary: summary.trim(),
       estimatedMinutes: estMinutes,
-      pdfUrl: cleanPdf,
+      materialType: mat.materialType,
+      pdfUrl: mat.pdfUrl,
+      pptUrl: mat.pptUrl,
+      videoUrl: mat.videoUrl,
       keyConcepts: concepts,
       content: content ? content.trim() : summary.trim(),
       order: mNum,
@@ -261,7 +337,8 @@ exports.createModule = async (req, res, next) => {
           topicNumber: 1,
           title: title.trim(),
           estimatedMinutes: estMinutes,
-          pdfUrl: cleanPdf
+          pdfUrl: topicUrl,
+          videoUrl: mat.videoUrl
         }
       ]
     });
@@ -320,7 +397,21 @@ exports.updateModule = async (req, res, next) => {
     }
     if (summary) moduleDoc.summary = summary.trim();
     if (estimatedMinutes) moduleDoc.estimatedMinutes = Number(estimatedMinutes);
-    if (pdfUrl !== undefined) moduleDoc.pdfUrl = pdfUrl.trim();
+    if (pdfUrl !== undefined) {
+      const mat = normalizeMaterialInput(pdfUrl);
+      moduleDoc.materialType = mat.materialType;
+      moduleDoc.pdfUrl = mat.pdfUrl;
+      moduleDoc.pptUrl = mat.pptUrl;
+      if (mat.videoUrl) {
+        moduleDoc.videoUrl = mat.videoUrl;
+      } else if (mat.pdfUrl || mat.pptUrl) {
+        moduleDoc.videoUrl = '';
+      }
+    }
+    if (req.body.videoUrl !== undefined && req.body.videoUrl.trim()) {
+      moduleDoc.videoUrl = req.body.videoUrl.trim();
+      moduleDoc.materialType = 'Video';
+    }
 
     if (keyConcepts !== undefined) {
       moduleDoc.keyConcepts = keyConcepts
@@ -335,7 +426,8 @@ exports.updateModule = async (req, res, next) => {
     if (moduleDoc.topics && moduleDoc.topics.length > 0) {
       moduleDoc.topics[0].title = moduleDoc.title;
       moduleDoc.topics[0].estimatedMinutes = moduleDoc.estimatedMinutes;
-      moduleDoc.topics[0].pdfUrl = moduleDoc.pdfUrl;
+      moduleDoc.topics[0].pdfUrl = moduleDoc.pptUrl || moduleDoc.pdfUrl;
+      moduleDoc.topics[0].videoUrl = moduleDoc.videoUrl || '';
     }
 
     await moduleDoc.save();
@@ -593,8 +685,11 @@ exports.quizResults = async (req, res, next) => {
 // =========================================================================
 exports.materials = async (req, res, next) => {
   try {
+    const selectedCourseId = req.query.courseId || '';
+    const filter = selectedCourseId ? { courseId: selectedCourseId } : {};
+
     const [materials, courses, modules] = await Promise.all([
-      StudyMaterial.find().populate('courseId moduleId').sort({ createdAt: -1 }),
+      StudyMaterial.find(filter).populate('courseId moduleId').sort({ createdAt: -1 }),
       Course.find().sort({ order: 1 }),
       Module.find().populate('courseId').sort({ courseId: 1, moduleNumber: 1 })
     ]);
@@ -604,6 +699,7 @@ exports.materials = async (req, res, next) => {
       materials,
       courses,
       modules,
+      selectedCourseId,
       message: req.query.message || '',
       error: req.query.error || ''
     });

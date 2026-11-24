@@ -410,7 +410,8 @@ exports.getQuizHistoryDetail = async (req, res, next) => {
 
     res.render('quizzes/history-detail', {
       pageTitle: `Quiz Review: ${attempt.quizId?.title || 'Result'} - FocusLearn`,
-      currentPath: '/quizzes/history',
+      currentPath: req.query.from === 'course' ? '/courses' : '/quizzes/history',
+      from: req.query.from === 'course' ? 'course' : 'history',
       attempt: {
         _id: attempt._id,
         attemptNumber: attempt.attemptNumber,

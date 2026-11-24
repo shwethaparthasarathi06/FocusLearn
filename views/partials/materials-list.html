@@ -11,11 +11,15 @@
               <% if (material.moduleId && material.moduleId.title) { %><div class="small text-primary mb-2">Topic: <%= material.moduleId.title %><%= material.topicNumber ? ' — Topic ' + material.topicNumber : '' %></div><% } %>
               <% if (material.materialType === 'Video') { %>
                 <% const ytMatch = material.materialUrl && material.materialUrl.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/|shorts\/))([A-Za-z0-9_-]{11})/); const videoEmbed = material.embedUrl || (ytMatch ? 'https://www.youtube.com/embed/' + ytMatch[1] : null); %>
-                <% if (videoEmbed) { %><div class="ratio ratio-16x9 mb-2"><iframe src="<%= videoEmbed %>" title="<%= material.title %>" allowfullscreen loading="lazy"></iframe></div><% } else { %><a class="btn btn-danger btn-sm" href="<%= material.materialUrl %>" target="_blank" rel="noopener">Watch video</a><% } %>
-              <% } else if (material.materialType === 'PDF' || material.materialType === 'Link') { %>
-                <a class="btn btn-primary btn-sm" href="<%= material.materialUrl %>" target="_blank" rel="noopener"><%= material.materialType === 'PDF' ? 'Open PDF' : 'Open link' %></a>
+                <% if (videoEmbed) { %><div class="ratio ratio-16x9 mb-2"><iframe src="<%= videoEmbed %>" title="<%= material.title %>" allowfullscreen loading="lazy"></iframe></div><% } else { %><a class="btn btn-danger btn-sm" href="<%= material.materialUrl %>" target="_blank" rel="noopener"><i class="bi bi-play-circle me-1"></i> Watch video</a><% } %>
+              <% } else if (material.materialType === 'PDF') { %>
+                <a class="btn btn-primary btn-sm" href="<%= material.materialUrl %>" target="_blank" rel="noopener"><i class="bi bi-file-earmark-pdf me-1"></i> Open PDF</a>
+              <% } else if (material.materialType === 'PPT') { %>
+                <a class="btn btn-warning text-dark btn-sm" href="<%= material.materialUrl %>" download><i class="bi bi-file-earmark-slides me-1"></i> Download Presentation (PPT)</a>
+              <% } else if (material.materialType === 'Link') { %>
+                <a class="btn btn-primary btn-sm" href="<%= material.materialUrl %>" target="_blank" rel="noopener"><i class="bi bi-box-arrow-up-right me-1"></i> Open link</a>
               <% } else if (material.materialType === 'Text') { %><div class="bg-light rounded p-3"><%= material.content %></div><% } %>
-              <span class="badge bg-secondary mt-2"><%= material.materialType %></span>
+              <span class="badge <%= material.materialType === 'PDF' ? 'bg-danger' : (material.materialType === 'PPT' ? 'bg-warning text-dark' : (material.materialType === 'Video' ? 'bg-info text-dark' : 'bg-secondary')) %> mt-2"><%= material.materialType %></span>
             </div>
           </div>
         <% }) %>

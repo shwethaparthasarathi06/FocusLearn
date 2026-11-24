@@ -200,6 +200,7 @@ body {
 .sidebar-avatar {
     width: 36px;
     height: 36px;
+    flex-shrink: 0;
     border-radius: 50%;
     background: var(--primary-purple);
     color: white;
@@ -214,7 +215,17 @@ body {
     font-size: 14px;
     color: #e2e8f0;
     font-weight: 500;
-    word-break: break-word;
+    min-width: 0;
+    flex: 1;
+}
+
+.sidebar-email {
+    display: block;
+    font-size: 11px;
+    color: #94a3b8;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .btn-sidebar-auth {
@@ -3253,4 +3264,33 @@ body {
     font-size: 0.85rem;
     letter-spacing: 0.03em;
     color: #475569;
+}
+
+/* FocusLearn Global Course UI Simplification - Topic Tags & Module Layout */
+.module-topics-section {
+    background: #fbfbfe;
+    border: 1px solid #eef0f8;
+    border-radius: 12px;
+    padding: 12px 16px;
+}
+
+.topic-tag {
+    background-color: #ffffff;
+    color: #475569;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    font-size: 0.82rem;
+    font-weight: 500;
+    padding: 5px 12px;
+    display: inline-flex;
+    align-items: center;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+    transition: all 0.2s ease;
+}
+
+.topic-tag:hover {
+    background-color: #f0eeff;
+    border-color: #7b71e8;
+    color: #5b4fd6;
+    transform: translateY(-1px);
 }

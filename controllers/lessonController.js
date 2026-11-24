@@ -1,6 +1,7 @@
 const Module = require('../models/Module');
 const Course = require('../models/Course');
 const StudyMaterial = require('../models/StudyMaterial');
+const QuizAttempt = require('../models/QuizAttempt');
 
 /**
  * Render Lesson / Learning Module
@@ -19,6 +20,14 @@ exports.getLesson = async (req, res, next) => {
     if (!course) {
       req.flash('error', 'Associated course not found.');
       return res.redirect('/courses');
+    }
+
+    if (req.session.userId) {
+      const priorAttempts = await QuizAttempt.find({ userId: req.session.userId, moduleId: moduleDoc._id }).select('passed').lean();
+      if (priorAttempts.length > 0 && !priorAttempts.some(a => a.passed)) {
+        req.flash('error', 'This topic is locked because you did not pass its quiz.');
+        return res.redirect(`/courses/${course.slug}`);
+      }
     }
 
     const materials = await StudyMaterial.find({ courseId: course._id, isPublished: true }).populate('moduleId').sort({ createdAt: -1 });
