@@ -216,6 +216,92 @@
                     </div>
                 </form>
             </div>
+
+            <!-- Change Password Section (Inline) -->
+            <div class="card-panel mt-4">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h4 class="fw-bold mb-0"><i class="bi bi-shield-lock me-2 text-primary"></i>Change Password</h4>
+                    <span class="badge bg-secondary-subtle text-secondary small">Security</span>
+                </div>
+
+                <form action="/dashboard/change-password" method="POST" id="changePasswordForm" novalidate>
+                    <div class="row g-3">
+                        <!-- Current Password -->
+                        <div class="col-md-12">
+                            <label for="currentPassword" class="form-label fw-semibold">
+                                Current Password <span class="text-danger">*</span>
+                            </label>
+                            <div class="input-group">
+                                <input 
+                                    type="password" 
+                                    class="form-control" 
+                                    id="currentPassword" 
+                                    name="currentPassword" 
+                                    placeholder="Enter your current password" 
+                                    required
+                                >
+                                <button class="btn btn-outline-secondary toggle-password" type="button" data-target="currentPassword" aria-label="Toggle password visibility">
+                                    <i class="bi bi-eye"></i>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- New Password -->
+                        <div class="col-md-6">
+                            <label for="newPassword" class="form-label fw-semibold">
+                                New Password <span class="text-danger">*</span>
+                            </label>
+                            <div class="input-group">
+                                <input 
+                                    type="password" 
+                                    class="form-control" 
+                                    id="newPassword" 
+                                    name="newPassword" 
+                                    placeholder="Min. 6 characters" 
+                                    minlength="6" 
+                                    required
+                                >
+                                <button class="btn btn-outline-secondary toggle-password" type="button" data-target="newPassword" aria-label="Toggle password visibility">
+                                    <i class="bi bi-eye"></i>
+                                </button>
+                            </div>
+                            <div class="progress mt-2" style="height: 6px;">
+                                <div id="strengthBar" class="progress-bar" role="progressbar" style="width: 0%;"></div>
+                            </div>
+                            <small id="strengthText" class="text-muted">Password strength</small>
+                        </div>
+
+                        <!-- Confirm New Password -->
+                        <div class="col-md-6">
+                            <label for="confirmPassword" class="form-label fw-semibold">
+                                Confirm New Password <span class="text-danger">*</span>
+                            </label>
+                            <div class="input-group">
+                                <input 
+                                    type="password" 
+                                    class="form-control" 
+                                    id="confirmPassword" 
+                                    name="confirmPassword" 
+                                    placeholder="Re-enter new password" 
+                                    minlength="6" 
+                                    required
+                                >
+                                <button class="btn btn-outline-secondary toggle-password" type="button" data-target="confirmPassword" aria-label="Toggle password visibility">
+                                    <i class="bi bi-eye"></i>
+                                </button>
+                            </div>
+                            <small id="matchMessage" class="form-text d-none"></small>
+                        </div>
+
+                        <!-- Submit -->
+                        <div class="col-12 pt-2">
+                            <button type="submit" class="btn-focus" id="submitBtn">
+                                <i class="bi bi-check2-circle me-1"></i> Update Password
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
         </div>
     </div>
 </div>
@@ -241,6 +327,70 @@
                     event.stopPropagation();
                 }
                 profileForm.classList.add('was-validated');
+            }, false);
+        }
+
+        // Password toggle, strength, match, and form validation
+        document.querySelectorAll('.toggle-password').forEach(button => {
+            button.addEventListener('click', function () {
+                const targetId = this.getAttribute('data-target');
+                const targetInput = document.getElementById(targetId);
+                const icon = this.querySelector('i');
+                if (targetInput) {
+                    if (targetInput.type === 'password') {
+                        targetInput.type = 'text';
+                        icon.classList.remove('bi-eye');
+                        icon.classList.add('bi-eye-slash');
+                    } else {
+                        targetInput.type = 'password';
+                        icon.classList.remove('bi-eye-slash');
+                        icon.classList.add('bi-eye');
+                    }
+                }
+            });
+        });
+
+        const newPasswordInput = document.getElementById('newPassword');
+        const strengthBar = document.getElementById('strengthBar');
+        const strengthText = document.getElementById('strengthText');
+        const confirmPasswordInput = document.getElementById('confirmPassword');
+        const matchMessage = document.getElementById('matchMessage');
+        const pwForm = document.getElementById('changePasswordForm');
+
+        if (newPasswordInput && strengthBar && strengthText) {
+            newPasswordInput.addEventListener('input', function () {
+                const val = newPasswordInput.value;
+                let score = 0;
+                if (val.length >= 6) score += 25;
+                if (val.length >= 10) score += 25;
+                if (/[0-9]/.test(val)) score += 25;
+                if (/[^A-Za-z0-9]/.test(val)) score += 25;
+                strengthBar.style.width = score + '%';
+                if (score <= 25) { strengthBar.className = 'progress-bar bg-danger'; strengthText.textContent = 'Weak'; strengthText.className = 'text-danger small'; }
+                else if (score <= 50) { strengthBar.className = 'progress-bar bg-warning'; strengthText.textContent = 'Fair'; strengthText.className = 'text-warning small'; }
+                else if (score <= 75) { strengthBar.className = 'progress-bar bg-info'; strengthText.textContent = 'Good'; strengthText.className = 'text-info small'; }
+                else { strengthBar.className = 'progress-bar bg-success'; strengthText.textContent = 'Strong'; strengthText.className = 'text-success small'; }
+            });
+        }
+
+        if (confirmPasswordInput && newPasswordInput && matchMessage) {
+            confirmPasswordInput.addEventListener('input', function () {
+                if (confirmPasswordInput.value.length === 0) { matchMessage.classList.add('d-none'); }
+                else if (confirmPasswordInput.value === newPasswordInput.value) { matchMessage.textContent = 'Passwords match!'; matchMessage.className = 'form-text text-success d-block small'; }
+                else { matchMessage.textContent = 'Passwords do not match.'; matchMessage.className = 'form-text text-danger d-block small'; }
+            });
+        }
+
+        if (pwForm) {
+            pwForm.addEventListener('submit', function (event) {
+                if (newPasswordInput.value !== confirmPasswordInput.value) {
+                    event.preventDefault();
+                    alert('New password and confirmation password do not match.');
+                    confirmPasswordInput.focus();
+                    return;
+                }
+                if (!pwForm.checkValidity()) { event.preventDefault(); event.stopPropagation(); }
+                pwForm.classList.add('was-validated');
             }, false);
         }
     });

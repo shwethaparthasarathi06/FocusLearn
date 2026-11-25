@@ -38,6 +38,15 @@
                         </iframe>
                     </div>
                 <% } else if (typeof pptUrl !== 'undefined' && pptUrl) { %>
+                    <!-- PPT Download Bar (like PDF toolbar) -->
+                    <div class="d-flex align-items-center justify-content-between px-3 py-2" style="background:#2c2c3a;border-bottom:1px solid #444;">
+                        <span class="text-white small fw-semibold">
+                            <i class="bi bi-file-earmark-slides-fill me-1 text-warning"></i> <%= mod.title %> — Presentation
+                        </span>
+                        <a href="<%= pptUrl %>" download class="btn btn-sm btn-warning fw-semibold px-3">
+                            <i class="bi bi-download me-1"></i> Download PPT
+                        </a>
+                    </div>
                     <!-- Client-side PPTX renderer via local pptx-preview -->
                     <div id="pptx-viewer-container" style="width:100%;height:100%;min-height:520px;overflow:hidden;background:#1e1e2e;display:flex;flex-direction:column;align-items:center;justify-content:center;">
                         <div id="pptx-loading" class="d-flex flex-column align-items-center justify-content-center w-100 h-100 text-white">
