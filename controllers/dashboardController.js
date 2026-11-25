@@ -44,11 +44,24 @@ exports.getDashboard = async (req, res, next) => {
     const studyMinutes = Math.floor((totalStudySeconds % 3600) / 60);
     const formattedStudyTime = studyHours > 0 ? `${studyHours}h ${studyMinutes}m` : `${studyMinutes} mins`;
 
-    // Quizzes Statistics
+    // Quizzes Statistics (Separated into Original and Redo Attempts)
+    const regularAttempts = quizAttempts.filter(a => !a.isRedoAttempt && a.quizType !== 'redo');
+    const redoAttempts = quizAttempts.filter(a => a.isRedoAttempt || a.quizType === 'redo');
+
     const totalQuizzesAttempted = quizAttempts.length;
     const quizzesPassed = quizAttempts.filter(a => a.passed).length;
     const averageQuizScore = totalQuizzesAttempted > 0
       ? Math.round(quizAttempts.reduce((sum, a) => sum + a.percentage, 0) / totalQuizzesAttempted)
+      : 0;
+
+    const regularPassed = regularAttempts.filter(a => a.passed).length;
+    const regularAvgScore = regularAttempts.length > 0
+      ? Math.round(regularAttempts.reduce((sum, a) => sum + a.percentage, 0) / regularAttempts.length)
+      : 0;
+
+    const redoPassed = redoAttempts.filter(a => a.passed).length;
+    const redoAvgScore = redoAttempts.length > 0
+      ? Math.round(redoAttempts.reduce((sum, a) => sum + a.percentage, 0) / redoAttempts.length)
       : 0;
 
     // Course Progress Mapping
@@ -59,6 +72,7 @@ exports.getDashboard = async (req, res, next) => {
 
     let coursesStarted = 0;
     let coursesCompleted = 0;
+    let coursesRedone = 0;
 
     const courseProgressList = await Promise.all(
       courses.map(async course => {
@@ -73,13 +87,23 @@ exports.getDashboard = async (req, res, next) => {
         if (p && p.isCourseCompleted) {
           coursesCompleted += 1;
         }
+        if (p && (p.redoStatus === 'completed' || (p.redoCount || 0) >= 1)) {
+          coursesRedone += 1;
+        }
 
         return {
           course,
           totalModulesCount,
           completedModulesCount,
           percentage,
-          isCompleted: p ? p.isCourseCompleted : false
+          isCompleted: p ? p.isCourseCompleted : false,
+          redoStatus: p ? (p.redoStatus || 'none') : 'none',
+          redoCount: p ? (p.redoCount || 0) : 0,
+          canRedo: Boolean(p && p.isCourseCompleted && (p.redoCount || 0) < (p.maxRedoAllowed || 1) && p.redoStatus !== 'completed'),
+          isRedoCompleted: Boolean(p && (p.redoStatus === 'completed' || (p.redoCount || 0) >= (p.maxRedoAllowed || 1))),
+          isRedoInProgress: Boolean(p && p.redoStatus === 'in-progress'),
+          completedRedoModulesCount: p && p.completedRedoModules ? p.completedRedoModules.length : 0,
+          redoPercentage: p ? (p.redoCompletionPercentage || 0) : 0
         };
       })
     );
@@ -212,11 +236,18 @@ exports.getDashboard = async (req, res, next) => {
         totalCourses: courses.length,
         coursesStarted,
         coursesCompleted,
+        coursesRedone,
         formattedStudyTime,
         totalSessions: studySessions.length,
         totalQuizzesAttempted,
         quizzesPassed,
-        averageQuizScore
+        averageQuizScore,
+        regularAttemptsCount: regularAttempts.length,
+        regularPassed,
+        regularAvgScore,
+        redoAttemptsCount: redoAttempts.length,
+        redoPassed,
+        redoAvgScore
       },
       courseProgressList,
       recentSessions,

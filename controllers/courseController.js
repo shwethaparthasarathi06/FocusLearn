@@ -4,43 +4,7 @@ const Quiz = require('../models/Quiz');
 const QuizAttempt = require('../models/QuizAttempt');
 const StudentProgress = require('../models/StudentProgress');
 const StudyMaterial = require('../models/StudyMaterial');
-
-// Convert YouTube URLs into embed URLs
-function getYouTubeEmbedUrl(url) {
-  if (!url) return null;
-
-  try {
-    const parsed = new URL(url);
-    const host = parsed.hostname.replace(/^www\./, '');
-
-    let videoId = '';
-
-    if (host === 'youtu.be') {
-      videoId = parsed.pathname.split('/')[1];
-    } else if (
-      host === 'youtube.com' ||
-      host === 'm.youtube.com' ||
-      host === 'youtube-nocookie.com'
-    ) {
-      if (parsed.pathname === '/watch') {
-        videoId = parsed.searchParams.get('v');
-      } else {
-        const match = parsed.pathname.match(/^\/(embed|shorts)\/([^/]+)/);
-        if (match) {
-          videoId = match[2];
-        }
-      }
-    }
-
-    if (!videoId || !/^[a-zA-Z0-9_-]{11}$/.test(videoId)) {
-      return null;
-    }
-
-    return `https://www.youtube.com/embed/${videoId}`;
-  } catch (error) {
-    return null;
-  }
-}
+const { getYouTubeEmbedUrl } = require('../utils/materialHelper');
 
 // Get all courses (Student Portal "All Courses" Page)
 exports.getAllCourses = async (req, res, next) => {
@@ -138,17 +102,24 @@ exports.getCourseDetails = async (req, res, next) => {
       courseId: course._id
     }).sort({ moduleNumber: 1 });
 
-    // Get all quizzes for this course
+    // Get all quizzes for this course, separated by type
     const quizzes = await Quiz.find({
       courseId: course._id
     });
     const quizzesByModule = {};
+    const redoQuizzesByModule = {};
     quizzes.forEach(q => {
-      quizzesByModule[q.moduleId.toString()] = q;
+      const mid = q.moduleId.toString();
+      if (q.quizType === 'redo') {
+        redoQuizzesByModule[mid] = q;
+      } else {
+        quizzesByModule[mid] = q;
+      }
     });
 
-    // Student Quiz Attempts and Best Scores
+    // Student Quiz Attempts separated into Original vs Redo Attempts
     const attemptsByModule = {};
+    const redoAttemptsByModule = {};
     let progress = null;
 
     if (req.session.userId) {
@@ -167,13 +138,27 @@ exports.getCourseDetails = async (req, res, next) => {
 
       attempts.forEach(a => {
         const key = a.moduleId.toString();
-        if (!attemptsByModule[key] || a.score > attemptsByModule[key].score) {
-          attemptsByModule[key] = a;
+        if (a.isRedoAttempt || a.quizType === 'redo') {
+          if (!redoAttemptsByModule[key] || a.score > redoAttemptsByModule[key].score) {
+            redoAttemptsByModule[key] = a;
+          }
+        } else {
+          if (!attemptsByModule[key] || a.score > attemptsByModule[key].score) {
+            attemptsByModule[key] = a;
+          }
         }
       });
     }
 
-    // Get published study materials for this course
+    // Redo Status flags
+    const redoCount = progress ? (progress.redoCount || 0) : 0;
+    const maxRedoAllowed = progress ? (progress.maxRedoAllowed || 1) : 1;
+    const isOriginalCompleted = Boolean(progress && progress.isCourseCompleted);
+    const isRedoInProgress = Boolean(progress && progress.redoStatus === 'in-progress');
+    const isRedoCompleted = Boolean(progress && (progress.redoStatus === 'completed' || redoCount >= maxRedoAllowed));
+    const canRedo = Boolean(isOriginalCompleted && !isRedoCompleted && !isRedoInProgress && redoCount < maxRedoAllowed);
+
+    // Get published study materials for this course (PDF, PPT, Video, Link, Text)
     const materials = await StudyMaterial.find({
       courseId: course._id,
       isPublished: true
@@ -193,12 +178,79 @@ exports.getCourseDetails = async (req, res, next) => {
       course,
       modules,
       quizzesByModule,
+      redoQuizzesByModule,
       attemptsByModule,
+      redoAttemptsByModule,
       progress,
+      canRedo,
+      isRedoInProgress,
+      isRedoCompleted,
+      redoCount,
+      maxRedoAllowed,
       materials: displayMaterials
     });
   } catch (err) {
     console.error('Course details error:', err);
+    next(err);
+  }
+};
+
+// Start Course Redo Attempt (Allow Only Once)
+exports.postStartRedoCourse = async (req, res, next) => {
+  try {
+    const { slug } = req.params;
+    const userId = req.session.userId;
+
+    if (!userId) {
+      req.flash('error', 'Please log in to redo a course.');
+      return res.redirect('/auth/login');
+    }
+
+    const course = await Course.findOne({ slug });
+    if (!course) {
+      req.flash('error', 'Course not found.');
+      return res.redirect('/courses');
+    }
+
+    let progress = await StudentProgress.findOne({
+      userId,
+      courseId: course._id
+    });
+
+    // 1. Must have completed original course
+    if (!progress || !progress.isCourseCompleted) {
+      req.flash('error', 'You must complete all topics in the original course before you can redo it.');
+      return res.redirect(`/courses/${course.slug}`);
+    }
+
+    // 2. Enforce 1-redo limit on backend
+    const currentRedoCount = progress.redoCount || 0;
+    const maxRedo = progress.maxRedoAllowed || 1;
+
+    if (currentRedoCount >= maxRedo || progress.redoStatus === 'completed') {
+      req.flash('error', `You have already used your ${maxRedo} permitted redo attempt for this course. Each course can only be redone once.`);
+      return res.redirect(`/courses/${course.slug}`);
+    }
+
+    // 3. If already in-progress, inform student
+    if (progress.redoStatus === 'in-progress') {
+      req.flash('info', 'Your redo attempt for this course is already active! Review the topics and take the redo quizzes.');
+      return res.redirect(`/courses/${course.slug}`);
+    }
+
+    // 4. Activate redo attempt
+    progress.redoStatus = 'in-progress';
+    progress.redoStartedAt = new Date();
+    progress.completedRedoModules = [];
+    progress.redoCompletionPercentage = 0;
+    progress.isRedoCompleted = false;
+
+    await progress.save();
+
+    req.flash('success', 'Course Redo started successfully! You are now taking the Redo attempt with separate Redo quizzes.');
+    res.redirect(`/courses/${course.slug}`);
+  } catch (err) {
+    console.error('Start course redo error:', err);
     next(err);
   }
 };

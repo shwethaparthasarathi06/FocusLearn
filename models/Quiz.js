@@ -42,7 +42,13 @@ const quizSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Module',
       required: true,
-      unique: true
+      index: true
+    },
+    quizType: {
+      type: String,
+      enum: ['regular', 'redo'],
+      default: 'regular',
+      index: true
     },
     title: {
       type: String,
@@ -70,5 +76,8 @@ const quizSchema = new mongoose.Schema(
     timestamps: true
   }
 );
+
+// Compound index allowing one regular quiz and one redo quiz per module
+quizSchema.index({ moduleId: 1, quizType: 1 }, { unique: true });
 
 module.exports = mongoose.model('Quiz', quizSchema);

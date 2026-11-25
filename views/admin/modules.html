@@ -174,7 +174,15 @@
                 </td>
                 <td><%= mod.estimatedMinutes %> mins</td>
                 <td>
-                  <% if (mod.pdfUrl) { %>
+                  <% if (mod.materialType === 'Video' || mod.videoUrl) { %>
+                    <a href="<%= mod.videoUrl %>" target="_blank" class="btn btn-sm btn-outline-danger py-0 px-2">
+                      <i class="bi bi-youtube"></i> YouTube
+                    </a>
+                  <% } else if (mod.materialType === 'PPT' || mod.pptUrl) { %>
+                    <a href="<%= mod.pptUrl || mod.pdfUrl %>" target="_blank" class="btn btn-sm btn-outline-warning text-dark py-0 px-2">
+                      <i class="bi bi-file-earmark-slides"></i> PPT
+                    </a>
+                  <% } else if (mod.pdfUrl) { %>
                     <a href="<%= mod.pdfUrl %>" target="_blank" class="btn btn-sm btn-outline-danger py-0 px-2">
                       <i class="bi bi-file-earmark-pdf"></i> PDF
                     </a>
