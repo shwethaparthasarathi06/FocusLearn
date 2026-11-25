@@ -17,14 +17,21 @@ const userSchema = new mongoose.Schema(
       trim: true,
       lowercase: true,
       match: [
-             /^[\w.+-]+@[\w.-]+\.[A-Za-z]{2,}$/,
-            'Please provide a valid email address'
-            ]
+        /^\w+([.-]?\w+)*@\w+([.-]?\w+)*(\.\w{2,10})+$/,
+        'Please provide a valid email address'
+      ]
     },
     passwordHash: {
       type: String,
-      required: [true, 'Password is required'],
+      required: function () {
+        return !this.googleId;
+      },
       minlength: [6, 'Password hash must be valid']
+    },
+    googleId: {
+      type: String,
+      sparse: true,
+      trim: true
     },
     role: {
       type: String,
@@ -38,6 +45,41 @@ const userSchema = new mongoose.Schema(
     lastLoginDate: {
       type: Date,
       default: null
+    },
+    lastLoginAt: {
+      type: Date,
+      default: null
+    },
+    phone: {
+      type: String,
+      trim: true,
+      default: ''
+    },
+    bio: {
+      type: String,
+      trim: true,
+      maxlength: [300, 'Bio cannot exceed 300 characters'],
+      default: ''
+    },
+    department: {
+      type: String,
+      trim: true,
+      default: ''
+    },
+    institution: {
+      type: String,
+      trim: true,
+      default: ''
+    },
+    headline: {
+      type: String,
+      trim: true,
+      default: ''
+    },
+    avatarUrl: {
+      type: String,
+      trim: true,
+      default: ''
     }
   },
   {
@@ -47,13 +89,14 @@ const userSchema = new mongoose.Schema(
 
 // Hash password before saving if modified
 userSchema.pre('save', async function () {
-  if (!this.isModified('passwordHash')) return;
+  if (!this.isModified('passwordHash') || !this.passwordHash) return;
   const salt = await bcrypt.genSalt(10);
   this.passwordHash = await bcrypt.hash(this.passwordHash, salt);
 });
 
 // Instance method to check password validity
 userSchema.methods.comparePassword = async function (candidatePassword) {
+  if (!this.passwordHash) return false;
   return bcrypt.compare(candidatePassword, this.passwordHash);
 };
 

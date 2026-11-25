@@ -29,28 +29,13 @@ const studyMaterialSchema = new mongoose.Schema(
 
     materialType: {
       type: String,
-      enum: ['PDF', 'PPT', 'Video', 'Link', 'Text'],
+      enum: ['PDF', 'Video', 'Link', 'Text', 'PPT'],
       required: true
     },
 
     materialUrl: {
       type: String,
       default: ''
-    },
-
-    embedUrl: {
-      type: String,
-      default: ''
-    },
-
-    fileName: {
-      type: String,
-      default: ''
-    },
-
-    fileSize: {
-      type: Number,
-      default: 0
     },
 
     content: {

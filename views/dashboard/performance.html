@@ -1,0 +1,332 @@
+<%- include('../partials/header.html') %>
+<%- include('../partials/sidebar.html') %>
+
+<div class="main-content">
+    <%- include('../partials/flash.html') %>
+
+    <!-- Header & Breadcrumb -->
+    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+        <div>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb mb-1">
+                    <li class="breadcrumb-item"><a href="/dashboard" class="text-decoration-none">Dashboard</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">My Performance</li>
+                </ol>
+            </nav>
+            <h2 class="courses-title mb-0">Academic & Quiz Performance</h2>
+            <p class="text-muted mb-0">Comprehensive metrics, historical score trajectory, and subject mastery breakdown.</p>
+        </div>
+        <div class="d-flex gap-2">
+            <a href="/quizzes/history" class="btn btn-outline-secondary">
+                <i class="bi bi-clock-history me-1"></i> Quiz History
+            </a>
+            <a href="/courses" class="btn-focus">
+                <i class="bi bi-journal-bookmark me-1"></i> Practice Quizzes
+            </a>
+        </div>
+    </div>
+
+    <!-- Overall Performance Status Banner -->
+    <div class="card-panel mb-4 p-4">
+        <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
+            <div>
+                <span class="text-muted small text-uppercase fw-bold letter-spacing-1">Overall Evaluation</span>
+                <div class="d-flex align-items-center gap-2 mt-1">
+                    <h3 class="fw-bold mb-0 text-dark"><%= stats.performanceRating %></h3>
+                    <span class="badge <%= stats.performanceBadgeClass %> fs-6"><%= stats.averageQuizScore %>% Avg</span>
+                </div>
+                <p class="text-muted mb-0 mt-2 small"><%= stats.performanceSummary %></p>
+            </div>
+            <div class="d-flex gap-3 text-center">
+                <div class="border rounded px-3 py-2 bg-light">
+                    <small class="text-muted d-block">Pass Rate</small>
+                    <strong class="fs-5 text-success"><%= stats.passRate %>%</strong>
+                </div>
+                <div class="border rounded px-3 py-2 bg-light">
+                    <small class="text-muted d-block">Passed / Total</small>
+                    <strong class="fs-5 text-dark"><%= stats.passedAttemptsCount %> / <%= stats.totalQuizzesAttempted %></strong>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 7 Core Performance Metrics Grid (Requirement 4) -->
+    <div class="row g-3 mb-4">
+        <!-- 1. Total Quizzes Attempted -->
+        <div class="col-lg-2 col-md-4 col-sm-6">
+            <div class="stat-card h-100">
+                <span class="stat-card-title">Quizzes Attempted</span>
+                <span class="stat-card-value text-dark"><%= stats.totalQuizzesAttempted %></span>
+                <span class="stat-card-sub">Recorded attempts</span>
+            </div>
+        </div>
+
+        <!-- 2. Total Correct Answers -->
+        <div class="col-lg-2 col-md-4 col-sm-6">
+            <div class="stat-card h-100">
+                <span class="stat-card-title">Correct Answers</span>
+                <span class="stat-card-value text-success">
+                    <i class="bi bi-check-circle me-1 fs-4"></i><%= stats.totalCorrectAnswers %>
+                </span>
+                <span class="stat-card-sub">All-time accurate</span>
+            </div>
+        </div>
+
+        <!-- 3. Total Incorrect Answers -->
+        <div class="col-lg-2 col-md-4 col-sm-6">
+            <div class="stat-card h-100">
+                <span class="stat-card-title">Incorrect Answers</span>
+                <span class="stat-card-value text-danger">
+                    <i class="bi bi-x-circle me-1 fs-4"></i><%= stats.totalIncorrectAnswers %>
+                </span>
+                <span class="stat-card-sub">Opportunities to learn</span>
+            </div>
+        </div>
+
+        <!-- 4. Average Quiz Score -->
+        <div class="col-lg-2 col-md-4 col-sm-6">
+            <div class="stat-card h-100">
+                <span class="stat-card-title">Average Score</span>
+                <span class="stat-card-value text-primary"><%= stats.averageQuizScore %>%</span>
+                <span class="stat-card-sub">Overall benchmark</span>
+            </div>
+        </div>
+
+        <!-- 5. Highest Quiz Score -->
+        <div class="col-lg-2 col-md-4 col-sm-6">
+            <div class="stat-card h-100">
+                <span class="stat-card-title">Highest Score</span>
+                <span class="stat-card-value text-success"><%= stats.highestPercentage %>%</span>
+                <span class="stat-card-sub"><%= stats.highestScore %>/10 personal best</span>
+            </div>
+        </div>
+
+        <!-- 6. Latest Quiz Score -->
+        <div class="col-lg-2 col-md-4 col-sm-6">
+            <div class="stat-card h-100">
+                <span class="stat-card-title">Latest Score</span>
+                <span class="stat-card-value text-info"><%= stats.latestQuizScore %>%</span>
+                <span class="stat-card-sub">Most recent attempt</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Visual Performance Chart Section -->
+    <div class="card-panel mb-4">
+        <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+            <div>
+                <h4 class="fw-bold mb-0">Score Progression Over Time</h4>
+                <p class="text-muted small mb-0">Visual trendline tracking your percentage scores across successive quiz attempts.</p>
+            </div>
+            <div>
+                <span class="badge bg-light text-dark border">
+                    <i class="bi bi-graph-up me-1 text-primary"></i> Real DB Records
+                </span>
+            </div>
+        </div>
+
+        <% if (stats.totalQuizzesAttempted > 0) { %>
+            <!-- Canvas for Chart.js -->
+            <div class="chart-container" style="position: relative; height: 320px; width: 100%;">
+                <canvas id="performanceChart"></canvas>
+            </div>
+
+            <!-- Fallback Visual SVG/Bar Chart for resilience -->
+            <div id="svgChartFallback" class="d-none mt-3">
+                <div class="d-flex align-items-end gap-2 p-3 bg-light rounded" style="height: 200px; overflow-x: auto;">
+                    <% chartData.rawAttempts.forEach(function(att, i) { %>
+                        <div class="d-flex flex-column align-items-center flex-shrink-0" style="width: 45px;">
+                            <span class="small fw-bold mb-1 <%= att.passed ? 'text-success' : 'text-danger' %>"><%= att.percentage %>%</span>
+                            <div class="w-100 rounded-top <%= att.passed ? 'bg-success' : 'bg-danger' %>" style="height: <%= att.percentage * 1.5 %>px; min-height: 4px;"></div>
+                            <small class="text-muted text-truncate w-100 text-center mt-1" style="font-size: 10px;"><%= att.label %></small>
+                        </div>
+                    <% }); %>
+                </div>
+            </div>
+        <% } else { %>
+            <div class="text-center py-5">
+                <div class="feature-icon-circle mx-auto mb-3 text-secondary">
+                    <i class="bi bi-bar-chart fs-1"></i>
+                </div>
+                <h5 class="fw-bold mb-2">No Performance Data Yet</h5>
+                <p class="text-muted mb-3 max-w-md mx-auto">
+                    Take your first module quiz to see your interactive progress chart and performance metrics appear here.
+                </p>
+                <a href="/courses" class="btn-focus">
+                    <i class="bi bi-journal-bookmark me-1"></i> Start Learning
+                </a>
+            </div>
+        <% } %>
+    </div>
+
+    <!-- Subject & Course Breakdown (Areas for Improvement) -->
+    <div class="card-panel mb-4">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <div>
+                <h4 class="fw-bold mb-0">Subject & Topic Breakdown</h4>
+                <p class="text-muted small mb-0">Identify subjects where you excel and areas needing targeted revision.</p>
+            </div>
+        </div>
+
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Subject / Course</th>
+                        <th class="text-center">Attempts</th>
+                        <th class="text-center">Best Score</th>
+                        <th class="text-center">Average Score</th>
+                        <th class="text-center">Mastery Status</th>
+                        <th>Progress & Recommendations</th>
+                        <th class="text-end">Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <% subjectBreakdown.forEach(function(sub) { %>
+                        <tr class="<%= sub.needsImprovement ? 'table-warning-subtle' : '' %>">
+                            <td>
+                                <div class="d-flex align-items-center">
+                                    <span class="badge bg-secondary-subtle text-secondary me-2"><%= sub.course.code %></span>
+                                    <div>
+                                        <strong class="text-dark"><%= sub.course.title %></strong>
+                                        <div class="small text-muted"><%= sub.course.durationHours %> hours &bull; <%= sub.course.category %></div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="text-center">
+                                <span class="badge bg-light text-dark border"><%= sub.count %></span>
+                            </td>
+                            <td class="text-center">
+                                <strong><%= sub.count > 0 ? sub.bestPercentage + '%' : '-' %></strong>
+                            </td>
+                            <td class="text-center">
+                                <strong class="<%= sub.averagePercentage >= 60 ? 'text-success' : 'text-danger' %>">
+                                    <%= sub.count > 0 ? sub.averagePercentage + '%' : '-' %>
+                                </strong>
+                            </td>
+                            <td class="text-center">
+                                <span class="fw-semibold <%= sub.statusClass %>">
+                                    <%= sub.status %>
+                                </span>
+                            </td>
+                            <td style="min-width: 250px;">
+                                <div class="progress mb-1" style="height: 6px;">
+                                    <div class="progress-bar <%= sub.averagePercentage >= 80 ? 'bg-success' : (sub.averagePercentage >= 60 ? 'bg-primary' : 'bg-danger') %>" 
+                                         role="progressbar" 
+                                         style="width: <%= sub.averagePercentage %>%;" 
+                                         aria-valuenow="<%= sub.averagePercentage %>" 
+                                         aria-valuemin="0" 
+                                         aria-valuemax="100">
+                                    </div>
+                                </div>
+                                <small class="text-muted"><%= sub.recommendation %></small>
+                            </td>
+                            <td class="text-end">
+                                <a href="/courses/<%= sub.course.slug %>" class="btn btn-sm btn-outline-primary">
+                                    Study <i class="bi bi-chevron-right ms-1"></i>
+                                </a>
+                            </td>
+                        </tr>
+                    <% }); %>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Chart.js Script via CDN (Whitelisted in Helmet CSP) -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const ctx = document.getElementById('performanceChart');
+        if (!ctx) return;
+
+        try {
+            const rawLabels = <%- chartData.labels %>;
+            const rawScores = <%- chartData.scores %>;
+            const rawMarks = <%- chartData.marks %>;
+
+            if (!rawLabels || rawLabels.length === 0) {
+                return;
+            }
+
+            new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: rawLabels,
+                    datasets: [
+                        {
+                            label: 'Quiz Percentage (%)',
+                            data: rawScores,
+                            borderColor: '#9990f5',
+                            backgroundColor: 'rgba(153, 144, 245, 0.15)',
+                            fill: true,
+                            tension: 0.35,
+                            borderWidth: 3,
+                            pointBackgroundColor: '#9990f5',
+                            pointBorderColor: '#ffffff',
+                            pointBorderWidth: 2,
+                            pointRadius: 6,
+                            pointHoverRadius: 8
+                        },
+                        {
+                            label: 'Passing Threshold (60%)',
+                            data: rawLabels.map(() => 60),
+                            borderColor: '#dc3545',
+                            borderDash: [6, 6],
+                            borderWidth: 1.5,
+                            fill: false,
+                            pointRadius: 0
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            min: 0,
+                            max: 100,
+                            ticks: {
+                                callback: function (value) {
+                                    return value + '%';
+                                },
+                                stepSize: 20
+                            },
+                            grid: {
+                                color: 'rgba(0, 0, 0, 0.05)'
+                            }
+                        },
+                        x: {
+                            grid: {
+                                display: false
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            display: true,
+                            position: 'top'
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function (context) {
+                                    const index = context.dataIndex;
+                                    const scorePct = rawScores[index];
+                                    const marks = rawMarks[index];
+                                    return `Score: ${marks}/10 (${scorePct}%)`;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        } catch (err) {
+            console.error('Error rendering performance chart:', err);
+            const fallback = document.getElementById('svgChartFallback');
+            if (fallback) fallback.classList.remove('d-none');
+        }
+    });
+</script>
+
+<%- include('../partials/footer.html') %>

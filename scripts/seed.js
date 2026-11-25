@@ -1,5 +1,5 @@
 const mongoose = require('mongoose');
-require('dotenv').config();
+require('dotenv').config({ quiet: true });
 const { connectDB } = require('../config/db');
 const Course = require('../models/Course');
 const Module = require('../models/Module');

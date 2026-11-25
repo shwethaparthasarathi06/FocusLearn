@@ -1,0 +1,249 @@
+<%- include('../partials/header.html') %>
+<%- include('../partials/sidebar.html') %>
+
+<div class="main-content">
+    <%- include('../partials/flash.html') %>
+
+    <!-- Page Header & Breadcrumb -->
+    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+        <div>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb mb-1">
+                    <li class="breadcrumb-item"><a href="/dashboard" class="text-decoration-none">Dashboard</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">My Profile</li>
+                </ol>
+            </nav>
+            <h2 class="courses-title mb-0">Student Profile Management</h2>
+        </div>
+        <div class="d-flex gap-2">
+            <a href="/dashboard/change-password" class="btn btn-outline-secondary">
+                <i class="bi bi-shield-lock me-1"></i> Change Password
+            </a>
+            <a href="/quizzes/history" class="btn btn-outline-primary">
+                <i class="bi bi-clock-history me-1"></i> My Quiz History
+            </a>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <!-- Profile Overview Card (Left Column) -->
+        <div class="col-lg-4 col-md-5">
+            <div class="card-panel text-center mb-4">
+                <div class="profile-avatar-circle mx-auto mb-3">
+                    <%= user.name.charAt(0).toUpperCase() %>
+                </div>
+                <h4 class="fw-bold mb-1"><%= user.name %></h4>
+                <p class="text-muted mb-2"><%= user.email %></p>
+
+                <% if (user.headline) { %>
+                    <span class="badge bg-light text-dark border mb-3"><%= user.headline %></span>
+                <% } else { %>
+                    <span class="badge bg-light text-dark border mb-3">Enrolled Student</span>
+                <% } %>
+
+                <hr class="my-3">
+
+                <!-- Meta Info List -->
+                <div class="text-start small text-muted">
+                    <div class="d-flex justify-content-between py-1">
+                        <span><i class="bi bi-calendar-check me-2"></i>Member Since:</span>
+                        <strong class="text-dark">
+                            <%= user.createdAt ? new Date(user.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'Recently' %>
+                        </strong>
+                    </div>
+                    <div class="d-flex justify-content-between py-1">
+                        <span><i class="bi bi-clock-history me-2"></i>Last Active:</span>
+                        <strong class="text-dark">
+                            <%= user.lastLoginDate ? new Date(user.lastLoginDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'Today' %>
+                        </strong>
+                    </div>
+                    <div class="d-flex justify-content-between py-1">
+                        <span><i class="bi bi-fire me-2 text-warning"></i>Study Streak:</span>
+                        <strong class="text-dark"><%= stats.streakDays %> day<%= stats.streakDays !== 1 ? 's' : '' %></strong>
+                    </div>
+                    <div class="d-flex justify-content-between py-1">
+                        <span><i class="bi bi-person-badge me-2"></i>Role:</span>
+                        <span class="badge bg-primary text-capitalize"><%= user.role || 'Student' %></span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Academic Snapshot Card -->
+            <div class="card-panel">
+                <h5 class="fw-bold mb-3"><i class="bi bi-mortarboard me-2 text-primary"></i>Academic Snapshot</h5>
+                <div class="d-flex justify-content-between py-2 border-bottom">
+                    <span class="text-muted">Quizzes Attempted</span>
+                    <strong><%= stats.totalAttempts %></strong>
+                </div>
+                <div class="d-flex justify-content-between py-2 border-bottom">
+                    <span class="text-muted">Quizzes Passed</span>
+                    <strong class="text-success"><%= stats.passedAttempts %></strong>
+                </div>
+                <div class="d-flex justify-content-between py-2 border-bottom">
+                    <span class="text-muted">Average Quiz Score</span>
+                    <strong class="text-primary"><%= stats.avgScore %>%</strong>
+                </div>
+                <div class="d-flex justify-content-between py-2 border-bottom">
+                    <span class="text-muted">Completed Modules</span>
+                    <strong><%= stats.completedModulesCount %></strong>
+                </div>
+                <div class="d-flex justify-content-between py-2">
+                    <span class="text-muted">Total Focus Time</span>
+                    <strong><%= stats.studyHours %> hrs</strong>
+                </div>
+            </div>
+        </div>
+
+        <!-- Edit Profile Form (Right Column) -->
+        <div class="col-lg-8 col-md-7">
+            <div class="card-panel">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h4 class="fw-bold mb-0">Profile Information</h4>
+                    <span class="badge bg-secondary-subtle text-secondary small">Editable Details</span>
+                </div>
+
+                <form action="/dashboard/profile" method="POST" id="profileForm" novalidate>
+                    <div class="row g-3">
+                        <!-- Full Name -->
+                        <div class="col-md-6">
+                            <label for="name" class="form-label fw-semibold">
+                                Full Name <span class="text-danger">*</span>
+                            </label>
+                            <input 
+                                type="text" 
+                                class="form-control" 
+                                id="name" 
+                                name="name" 
+                                value="<%= user.name %>" 
+                                minlength="2" 
+                                maxlength="60" 
+                                required
+                            >
+                            <div class="invalid-feedback">Name must be between 2 and 60 characters.</div>
+                        </div>
+
+                        <!-- Email Address -->
+                        <div class="col-md-6">
+                            <label for="email" class="form-label fw-semibold">
+                                Email Address <span class="text-danger">*</span>
+                            </label>
+                            <input 
+                                type="email" 
+                                class="form-control" 
+                                id="email" 
+                                name="email" 
+                                value="<%= user.email %>" 
+                                required
+                            >
+                            <div class="invalid-feedback">Please provide a valid email address.</div>
+                        </div>
+
+                        <!-- Phone Number -->
+                        <div class="col-md-6">
+                            <label for="phone" class="form-label fw-semibold">Phone Number</label>
+                            <input 
+                                type="tel" 
+                                class="form-control" 
+                                id="phone" 
+                                name="phone" 
+                                value="<%= user.phone || '' %>" 
+                                placeholder="+1 (555) 000-0000"
+                            >
+                        </div>
+
+                        <!-- Academic Headline / Major -->
+                        <div class="col-md-6">
+                            <label for="headline" class="form-label fw-semibold">Headline / Specialization</label>
+                            <input 
+                                type="text" 
+                                class="form-control" 
+                                id="headline" 
+                                name="headline" 
+                                value="<%= user.headline || '' %>" 
+                                placeholder="e.g. Computer Science Undergrad"
+                            >
+                        </div>
+
+                        <!-- Department -->
+                        <div class="col-md-6">
+                            <label for="department" class="form-label fw-semibold">Department / Faculty</label>
+                            <input 
+                                type="text" 
+                                class="form-control" 
+                                id="department" 
+                                name="department" 
+                                value="<%= user.department || '' %>" 
+                                placeholder="e.g. Information Technology"
+                            >
+                        </div>
+
+                        <!-- Institution / University -->
+                        <div class="col-md-6">
+                            <label for="institution" class="form-label fw-semibold">Institution / University</label>
+                            <input 
+                                type="text" 
+                                class="form-control" 
+                                id="institution" 
+                                name="institution" 
+                                value="<%= user.institution || '' %>" 
+                                placeholder="e.g. State University of Technology"
+                            >
+                        </div>
+
+                        <!-- Bio / About Me -->
+                        <div class="col-12">
+                            <label for="bio" class="form-label fw-semibold">About Me / Bio</label>
+                            <textarea 
+                                class="form-control" 
+                                id="bio" 
+                                name="bio" 
+                                rows="4" 
+                                maxlength="300" 
+                                placeholder="Write a short summary about your learning goals and study interests..."
+                            ><%= user.bio || '' %></textarea>
+                            <div class="form-text text-end" id="bioCounter">0 / 300 characters</div>
+                        </div>
+
+                        <!-- Form Action Buttons -->
+                        <div class="col-12 pt-3 border-top d-flex justify-content-between align-items-center">
+                            <a href="/dashboard" class="btn btn-outline-secondary">
+                                <i class="bi bi-arrow-left me-1"></i> Back to Dashboard
+                            </a>
+                            <button type="submit" class="btn-focus">
+                                <i class="bi bi-check2-circle me-1"></i> Save Changes
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Frontend Validation & Character Counter
+    document.addEventListener('DOMContentLoaded', function () {
+        const bioInput = document.getElementById('bio');
+        const bioCounter = document.getElementById('bioCounter');
+        if (bioInput && bioCounter) {
+            const updateCount = () => {
+                bioCounter.textContent = `${bioInput.value.length} / 300 characters`;
+            };
+            bioInput.addEventListener('input', updateCount);
+            updateCount();
+        }
+
+        const profileForm = document.getElementById('profileForm');
+        if (profileForm) {
+            profileForm.addEventListener('submit', function (event) {
+                if (!profileForm.checkValidity()) {
+                    event.preventDefault();
+                    event.stopPropagation();
+                }
+                profileForm.classList.add('was-validated');
+            }, false);
+        }
+    });
+</script>
+
+<%- include('../partials/footer.html') %>

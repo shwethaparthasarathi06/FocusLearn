@@ -1,18 +1,9 @@
-const mongoose = require('mongoose');
-const path = require('path');
-const fs = require('fs');
 const Course = require('../models/Course');
 const StudyMaterial = require('../models/StudyMaterial');
 const Module = require('../models/Module');
 const Quiz = require('../models/Quiz');
 const QuizAttempt = require('../models/QuizAttempt');
 const User = require('../models/User');
-const {
-  isValidYouTubeUrl,
-  getYouTubeEmbedUrl,
-  parseMaterialUpload,
-  isValidMaterialExtension
-} = require('../utils/materialHelper');
 
 const makeSlug = (value) =>
   value.toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
@@ -70,59 +61,19 @@ exports.dashboard = async (req, res, next) => {
 // =========================================================================
 exports.subjects = async (req, res, next) => {
   try {
-    const selectedCourseId = req.query.courseId || '';
-    const searchQuery = (req.query.search || '').trim();
-    const selectedCategory = req.query.category || '';
-
-    // Robust filter with MongoDB
-    const filter = {};
-    if (selectedCourseId) {
-      if (mongoose.Types.ObjectId.isValid(selectedCourseId)) {
-        filter._id = selectedCourseId;
-      } else {
-        // Safe empty filter when invalid course ID passed
-        filter._id = new mongoose.Types.ObjectId();
-      }
-    }
-    if (selectedCategory) {
-      filter.category = selectedCategory;
-    }
-    if (searchQuery) {
-      filter.$or = [
-        { title: { $regex: searchQuery, $options: 'i' } },
-        { code: { $regex: searchQuery, $options: 'i' } },
-        { description: { $regex: searchQuery, $options: 'i' } }
-      ];
-    }
-
-    const [allCourses, courses, moduleCounts] = await Promise.all([
-      Course.find().sort({ order: 1, title: 1 }),
-      Course.find(filter).sort({ order: 1, title: 1 }),
-      Module.aggregate([
-        { $group: { _id: '$courseId', count: { $sum: 1 } } }
-      ])
+    const courses = await Course.find().sort({ order: 1, title: 1 });
+    const moduleCounts = await Module.aggregate([
+      { $group: { _id: '$courseId', count: { $sum: 1 } } }
     ]);
-
     const countMap = {};
     moduleCounts.forEach(m => { countMap[m._id.toString()] = m.count; });
     courses.forEach(c => {
       c.actualModuleCount = countMap[c._id.toString()] || 0;
     });
-    allCourses.forEach(c => {
-      c.actualModuleCount = countMap[c._id.toString()] || 0;
-    });
-
-    // Extract unique categories for category filter
-    const categories = Array.from(new Set(allCourses.map(c => c.category).filter(Boolean)));
 
     res.render('admin/subjects', {
       pageTitle: 'Manage Courses & Subjects',
-      allCourses,
       courses,
-      categories,
-      selectedCourseId,
-      searchQuery,
-      selectedCategory,
       message: req.query.message || '',
       error: req.query.error || ''
     });
@@ -270,147 +221,142 @@ exports.modules = async (req, res, next) => {
   }
 };
 
+// =========================================================================
+// 5. REGISTERED STUDENTS LIST
+// =========================================================================
+exports.registeredStudents = async (req, res, next) => {
+  try {
+    const page = parseInt(req.query.page) || 1;
+    const limit = 20;
+    const skip = (page - 1) * limit;
+    const search = (req.query.search || '').trim();
+    const sortBy = req.query.sortBy || 'name';
+
+    const filter = { role: 'student' };
+    if (search) {
+      const searchRegex = new RegExp(search, 'i');
+      filter.$or = [
+        { name: searchRegex },
+        { email: searchRegex }
+      ];
+    }
+
+    let sortObj = { name: 1 };
+    if (sortBy === 'login') {
+      sortObj = { lastLoginAt: -1, lastLoginDate: -1, createdAt: -1 };
+    } else if (sortBy === 'name-desc') {
+      sortObj = { name: -1 };
+    }
+
+    const total = await User.countDocuments(filter);
+    const students = await User.find(filter)
+      .sort(sortObj)
+      .skip(skip)
+      .limit(limit)
+      .select('name email lastLoginDate lastLoginAt role createdAt');
+
+    const totalPages = Math.ceil(total / limit) || 1;
+
+    res.render('admin/registered-students', {
+      pageTitle: 'Registered Students - FocusLearn',
+      students,
+      currentPage: page,
+      totalPages,
+      totalStudents: total,
+      search,
+      sortBy
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
+function normalizeMaterialInput(rawUrl) {
+  let clean = (rawUrl || '').trim();
+  if (!clean) return { materialType: 'PDF', pdfUrl: '', pptUrl: '', videoUrl: '' };
+  if (/youtube\.com|youtu\.be/i.test(clean)) {
+    return { materialType: 'Video', pdfUrl: '', pptUrl: '', videoUrl: clean };
+  }
+  if (!/^https?:\/\//i.test(clean)) {
+    clean = clean.replace(/\\/g, '/');
+    const pubIdx = clean.toLowerCase().lastIndexOf('/public/');
+    if (pubIdx !== -1) {
+      clean = clean.slice(pubIdx + '/public'.length);
+    } else {
+      clean = clean.replace(/^(\.\/)?public\//i, '/');
+    }
+    if (!clean.startsWith('/')) clean = '/' + clean;
+  }
+  if (/\.(pptx|ppt)$/i.test(clean)) {
+    return { materialType: 'PPT', pdfUrl: '', pptUrl: clean, videoUrl: '' };
+  }
+  return { materialType: 'PDF', pdfUrl: clean, pptUrl: '', videoUrl: '' };
+}
 
 exports.createModule = async (req, res, next) => {
   try {
-    const {
-      courseId,
-      moduleNumber,
-      title,
-      summary,
-      estimatedMinutes,
-      materialType,
-      pdfUrl,
-      pptUrl,
-      videoUrl,
-      keyConcepts,
-      content
-    } = req.body;
+    const { courseId, moduleNumber, title, summary, estimatedMinutes, pdfUrl, keyConcepts, content } = req.body;
 
     if (!courseId || !title || !summary) {
-      return res.redirect(
-        '/admin/modules?error=' +
-        encodeURIComponent('Course, Topic Title, and Summary are required.')
-      );
+      return res.redirect('/admin/modules?error=' + encodeURIComponent('Course, Topic Title, and Summary are required.'));
     }
 
     const course = await Course.findById(courseId);
-
     if (!course) {
-      return res.redirect(
-        '/admin/modules?error=' +
-        encodeURIComponent('Selected Course not found.')
-      );
+      return res.redirect('/admin/modules?error=' + encodeURIComponent('Selected Course not found.'));
     }
 
-    const mCount = await Module.countDocuments({
-      courseId: course._id
-    });
-
-    const mNum = Number(moduleNumber) > 0
-      ? Number(moduleNumber)
-      : mCount + 1;
+    const mCount = await Module.countDocuments({ courseId: course._id });
+    const mNum = Number(moduleNumber) > 0 ? Number(moduleNumber) : (mCount + 1);
+    const slug = makeSlug(title);
 
     const concepts = keyConcepts
       ? keyConcepts.split(',').map(s => s.trim()).filter(Boolean)
       : [];
 
-    const estMinutes = Number(estimatedMinutes) > 0
-      ? Number(estimatedMinutes)
-      : 35;
-
-    const selectedType = materialType || 'None';
-
-    if (!['PDF', 'PPT', 'Video', 'None'].includes(selectedType)) {
-      return res.redirect(
-        '/admin/modules?error=' +
-        encodeURIComponent('Invalid material type.')
-      );
-    }
-
-    const cleanPdf = pdfUrl ? pdfUrl.trim() : '';
-    const cleanPpt = pptUrl ? pptUrl.trim() : '';
-    const cleanVideo = videoUrl ? videoUrl.trim() : '';
-
-    if (selectedType === 'Video') {
-      if (!cleanVideo || !isValidYouTubeUrl(cleanVideo)) {
-        return res.redirect(
-          '/admin/modules?error=' +
-          encodeURIComponent('Please enter a valid YouTube video URL.')
-        );
-      }
-    }
-
-    if (selectedType === 'PDF' && !cleanPdf) {
-      return res.redirect(
-        '/admin/modules?error=' +
-        encodeURIComponent('Please enter a PDF URL or path.')
-      );
-    }
-
-    if (selectedType === 'PPT' && !cleanPpt) {
-      return res.redirect(
-        '/admin/modules?error=' +
-        encodeURIComponent('Please enter a PPT/PPTX URL or path.')
-      );
-    }
+    const estMinutes = Number(estimatedMinutes) > 0 ? Number(estimatedMinutes) : 35;
+    const mat = normalizeMaterialInput(pdfUrl);
+    const topicUrl = mat.pptUrl || mat.pdfUrl || '';
 
     const newModule = await Module.create({
       courseId: course._id,
       moduleNumber: mNum,
       title: title.trim(),
-      slug: makeSlug(title),
+      slug,
       summary: summary.trim(),
       estimatedMinutes: estMinutes,
-      materialType: selectedType,
-      pdfUrl: cleanPdf,
-      pptUrl: cleanPpt,
-      videoUrl: cleanVideo,
+      materialType: mat.materialType,
+      pdfUrl: mat.pdfUrl,
+      pptUrl: mat.pptUrl,
+      videoUrl: mat.videoUrl,
       keyConcepts: concepts,
       content: content ? content.trim() : summary.trim(),
       order: mNum,
-      topics: [{
-        topicNumber: 1,
-        title: title.trim(),
-        estimatedMinutes: estMinutes,
-        pdfUrl: cleanPdf
-      }]
+      topics: [
+        {
+          topicNumber: 1,
+          title: title.trim(),
+          estimatedMinutes: estMinutes,
+          pdfUrl: topicUrl,
+          videoUrl: mat.videoUrl
+        }
+      ]
     });
 
-    // Recalculate course module count and duration
-    const allMods = await Module.find({
-      courseId: course._id
-    });
-
+    // Automatically recalculate course module count and duration
+    const allMods = await Module.find({ courseId: course._id });
     course.lessonCount = allMods.length;
-
-    const totalMins = allMods.reduce(
-      (sum, m) => sum + (m.estimatedMinutes || 0),
-      0
-    );
-
+    const totalMins = allMods.reduce((sum, m) => sum + (m.estimatedMinutes || 0), 0);
     course.durationHours = +(totalMins / 60).toFixed(1);
-
     await course.save();
 
-    res.redirect(
-      '/admin/modules?courseId=' + course._id +
-      '&message=' +
-      encodeURIComponent(
-        `Topic "${newModule.title}" created successfully for ${course.code}.`
-      )
-    );
-
+    res.redirect('/admin/modules?courseId=' + course._id + '&message=' +
+      encodeURIComponent(`Topic "${newModule.title}" created successfully for ${course.code}. You can now create a 10-Question Quiz for it.`));
   } catch (err) {
     if (err.code === 11000) {
-      return res.redirect(
-        '/admin/modules?error=' +
-        encodeURIComponent(
-          'A module with this number or title already exists in this course.'
-        )
-      );
+      return res.redirect('/admin/modules?error=' +
+        encodeURIComponent('A module with this number or title already exists in this course.'));
     }
-
     next(err);
   }
 };
@@ -435,93 +381,37 @@ exports.editModulePage = async (req, res, next) => {
   }
 };
 
-
 exports.updateModule = async (req, res, next) => {
   try {
-    const {
-      moduleNumber,
-      title,
-      summary,
-      estimatedMinutes,
-      materialType,
-      pdfUrl,
-      pptUrl,
-      videoUrl,
-      keyConcepts,
-      content
-    } = req.body;
-
+    const { moduleNumber, title, summary, estimatedMinutes, pdfUrl, keyConcepts, content } = req.body;
     const moduleDoc = await Module.findById(req.params.id);
 
     if (!moduleDoc) {
       return res.status(404).send('Topic / Module not found.');
     }
 
-    if (moduleNumber) {
-      moduleDoc.moduleNumber = Number(moduleNumber);
-    }
-
+    if (moduleNumber) moduleDoc.moduleNumber = Number(moduleNumber);
     if (title) {
       moduleDoc.title = title.trim();
       moduleDoc.slug = makeSlug(title);
     }
-
-    if (summary !== undefined) {
-      moduleDoc.summary = summary.trim();
-    }
-
-    if (estimatedMinutes) {
-      moduleDoc.estimatedMinutes = Number(estimatedMinutes);
-    }
-
-    const selectedType = materialType || 'None';
-
-    if (!['PDF', 'PPT', 'Video', 'None'].includes(selectedType)) {
-      return res.redirect(
-        `/admin/modules/${req.params.id}/edit?error=` +
-        encodeURIComponent('Invalid material type.')
-      );
-    }
-
-    const cleanPdf = pdfUrl !== undefined
-      ? pdfUrl.trim()
-      : (moduleDoc.pdfUrl || '');
-
-    const cleanPpt = pptUrl !== undefined
-      ? pptUrl.trim()
-      : (moduleDoc.pptUrl || '');
-
-    const cleanVideo = videoUrl !== undefined
-      ? videoUrl.trim()
-      : (moduleDoc.videoUrl || '');
-
-    if (selectedType === 'Video') {
-      if (!cleanVideo || !isValidYouTubeUrl(cleanVideo)) {
-        return res.redirect(
-          `/admin/modules/${req.params.id}/edit?error=` +
-          encodeURIComponent('Please enter a valid YouTube video URL.')
-        );
+    if (summary) moduleDoc.summary = summary.trim();
+    if (estimatedMinutes) moduleDoc.estimatedMinutes = Number(estimatedMinutes);
+    if (pdfUrl !== undefined) {
+      const mat = normalizeMaterialInput(pdfUrl);
+      moduleDoc.materialType = mat.materialType;
+      moduleDoc.pdfUrl = mat.pdfUrl;
+      moduleDoc.pptUrl = mat.pptUrl;
+      if (mat.videoUrl) {
+        moduleDoc.videoUrl = mat.videoUrl;
+      } else if (mat.pdfUrl || mat.pptUrl) {
+        moduleDoc.videoUrl = '';
       }
     }
-
-    if (selectedType === 'PDF' && !cleanPdf) {
-      return res.redirect(
-        `/admin/modules/${req.params.id}/edit?error=` +
-        encodeURIComponent('Please enter a PDF URL or path.')
-      );
+    if (req.body.videoUrl !== undefined && req.body.videoUrl.trim()) {
+      moduleDoc.videoUrl = req.body.videoUrl.trim();
+      moduleDoc.materialType = 'Video';
     }
-
-    if (selectedType === 'PPT' && !cleanPpt) {
-      return res.redirect(
-        `/admin/modules/${req.params.id}/edit?error=` +
-        encodeURIComponent('Please enter a PPT/PPTX URL or path.')
-      );
-    }
-
-    moduleDoc.materialType = selectedType;
-    moduleDoc.pdfUrl = cleanPdf;
-    moduleDoc.pptUrl = cleanPpt;
-    moduleDoc.videoUrl = cleanVideo;
 
     if (keyConcepts !== undefined) {
       moduleDoc.keyConcepts = keyConcepts
@@ -536,37 +426,26 @@ exports.updateModule = async (req, res, next) => {
     if (moduleDoc.topics && moduleDoc.topics.length > 0) {
       moduleDoc.topics[0].title = moduleDoc.title;
       moduleDoc.topics[0].estimatedMinutes = moduleDoc.estimatedMinutes;
-      moduleDoc.topics[0].pdfUrl = cleanPdf;
+      moduleDoc.topics[0].pdfUrl = moduleDoc.pptUrl || moduleDoc.pdfUrl;
+      moduleDoc.topics[0].videoUrl = moduleDoc.videoUrl || '';
     }
 
     await moduleDoc.save();
 
-    // Recalculate course duration
-    const allMods = await Module.find({
-      courseId: moduleDoc.courseId
-    });
-
-    const totalMins = allMods.reduce(
-      (sum, m) => sum + (m.estimatedMinutes || 0),
-      0
-    );
-
+    // Recalculate duration for course
+    const allMods = await Module.find({ courseId: moduleDoc.courseId });
+    const totalMins = allMods.reduce((sum, m) => sum + (m.estimatedMinutes || 0), 0);
     await Course.findByIdAndUpdate(moduleDoc.courseId, {
       lessonCount: allMods.length,
       durationHours: +(totalMins / 60).toFixed(1)
     });
 
-    res.redirect(
-      '/admin/modules?courseId=' + moduleDoc.courseId +
-      '&message=' +
-      encodeURIComponent('Topic updated successfully.')
-    );
-
+    res.redirect('/admin/modules?courseId=' + moduleDoc.courseId + '&message=' +
+      encodeURIComponent('Topic updated successfully.'));
   } catch (err) {
     next(err);
   }
 };
-
 
 exports.deleteModule = async (req, res, next) => {
   try {
@@ -600,26 +479,13 @@ exports.deleteModule = async (req, res, next) => {
 // =========================================================================
 exports.quizzes = async (req, res, next) => {
   try {
-    const selectedCourseId = req.query.courseId || '';
-    const selectedQuizType = req.query.quizType || '';
-    const targetModuleId = req.query.moduleId || '';
-
-    const filter = {};
-    if (selectedCourseId && mongoose.Types.ObjectId.isValid(selectedCourseId)) {
-      filter.courseId = selectedCourseId;
-    }
-    if (selectedQuizType) {
-      filter.quizType = selectedQuizType;
-    }
-    if (targetModuleId && mongoose.Types.ObjectId.isValid(targetModuleId)) {
-      filter.moduleId = targetModuleId;
-    }
-
     const [quizzes, courses, modules] = await Promise.all([
-      Quiz.find(filter).populate('courseId moduleId').sort({ updatedAt: -1 }),
+      Quiz.find().populate('courseId moduleId').sort({ updatedAt: -1 }),
       Course.find().sort({ order: 1, title: 1 }),
       Module.find().populate('courseId').sort({ courseId: 1, moduleNumber: 1 })
     ]);
+
+    const targetModuleId = req.query.moduleId || '';
 
     res.render('admin/quizzes', {
       pageTitle: 'Manage Topic Quizzes',
@@ -627,8 +493,6 @@ exports.quizzes = async (req, res, next) => {
       courses,
       modules,
       targetModuleId,
-      selectedCourseId,
-      selectedQuizType,
       message: req.query.message || '',
       error: req.query.error || ''
     });
@@ -639,8 +503,7 @@ exports.quizzes = async (req, res, next) => {
 
 exports.saveQuiz = async (req, res, next) => {
   try {
-    const { moduleId, title, passingScore, quizType = 'regular' } = req.body;
-    const finalQuizType = (quizType === 'redo') ? 'redo' : 'regular';
+    const { moduleId, title, passingScore } = req.body;
     const moduleDoc = await Module.findById(moduleId);
 
     if (!moduleDoc) {
@@ -688,16 +551,14 @@ exports.saveQuiz = async (req, res, next) => {
       });
     }
 
-    const defaultSuffix = finalQuizType === 'redo' ? 'Redo Assessment' : 'Assessment';
-    const quizTitle = title?.trim() || `${moduleDoc.title} ${defaultSuffix}`;
+    const quizTitle = title?.trim() || `${moduleDoc.title} Assessment`;
     const pScore = Math.min(10, Math.max(0, Number(passingScore) || 6));
 
     await Quiz.findOneAndUpdate(
-      { moduleId: moduleDoc._id, quizType: finalQuizType },
+      { moduleId: moduleDoc._id },
       {
         courseId: moduleDoc.courseId,
         moduleId: moduleDoc._id,
-        quizType: finalQuizType,
         title: quizTitle,
         passingScore: pScore,
         totalQuestions: 10,
@@ -706,9 +567,8 @@ exports.saveQuiz = async (req, res, next) => {
       { upsert: true, new: true, runValidators: true, setDefaultsOnInsert: true }
     );
 
-    const typeDesc = finalQuizType === 'redo' ? 'Redo Quiz' : 'Original Quiz';
     res.redirect('/admin/quizzes?message=' +
-      encodeURIComponent(`${typeDesc} for "${moduleDoc.title}" saved successfully!`));
+      encodeURIComponent(`10-Question Quiz for "${moduleDoc.title}" saved successfully!`));
   } catch (err) {
     res.redirect('/admin/quizzes?error=' + encodeURIComponent(err.message || 'Unable to save quiz.'));
   }
@@ -780,9 +640,6 @@ exports.updateQuiz = async (req, res, next) => {
 
     quiz.title = title ? title.trim() : quiz.title;
     quiz.passingScore = Math.min(10, Math.max(0, Number(passingScore) || 6));
-    if (req.body.quizType) {
-      quiz.quizType = (req.body.quizType === 'redo') ? 'redo' : 'regular';
-    }
     quiz.questions = questions;
 
     await quiz.save();
@@ -824,24 +681,16 @@ exports.quizResults = async (req, res, next) => {
 };
 
 // =========================================================================
-// 5. STUDY MATERIAL MANAGEMENT (PDF, PPT/PPTX, YouTube Videos)
+// 5. STUDY MATERIAL MANAGEMENT
 // =========================================================================
 exports.materials = async (req, res, next) => {
   try {
     const selectedCourseId = req.query.courseId || '';
-    const selectedType = req.query.materialType || '';
-
-    const filter = {};
-    if (selectedCourseId && mongoose.Types.ObjectId.isValid(selectedCourseId)) {
-      filter.courseId = selectedCourseId;
-    }
-    if (selectedType) {
-      filter.materialType = selectedType;
-    }
+    const filter = selectedCourseId ? { courseId: selectedCourseId } : {};
 
     const [materials, courses, modules] = await Promise.all([
       StudyMaterial.find(filter).populate('courseId moduleId').sort({ createdAt: -1 }),
-      Course.find().sort({ order: 1, title: 1 }),
+      Course.find().sort({ order: 1 }),
       Module.find().populate('courseId').sort({ courseId: 1, moduleNumber: 1 })
     ]);
 
@@ -851,7 +700,6 @@ exports.materials = async (req, res, next) => {
       courses,
       modules,
       selectedCourseId,
-      selectedType,
       message: req.query.message || '',
       error: req.query.error || ''
     });
@@ -862,121 +710,36 @@ exports.materials = async (req, res, next) => {
 
 exports.createMaterial = async (req, res, next) => {
   try {
-    let body = req.body;
-    let uploadedFile = null;
-
-    const contentType = req.headers['content-type'] || '';
-    const isMultipart = contentType.includes('multipart/form-data');
-    if (isMultipart) {
-      try {
-        const parsed = await parseMaterialUpload(req);
-        body = parsed.fields;
-        uploadedFile = parsed.file;
-      } catch (parseErr) {
-        console.error('Multipart parse error:', parseErr);
-        return res.redirect('/admin/materials?error=' + encodeURIComponent('File upload failed: ' + (parseErr.message || 'Parse error')));
-      }
-    }
-
     const {
       title, description, courseId, moduleId, topicNumber, materialType,
       materialUrl, content
-    } = body;
-
-    if (!title || !title.trim()) {
-      return res.redirect('/admin/materials?error=' + encodeURIComponent('Material title is required.'));
-    }
+    } = req.body;
 
     const course = await Course.findById(courseId);
+
     if (!course) {
-      return res.redirect('/admin/materials?error=' + encodeURIComponent('Please select a valid subject/course.'));
+      return res.redirect('/admin/materials?error=' +
+        encodeURIComponent('Please select a valid subject.'));
     }
 
-    if (!['PDF', 'PPT', 'Video', 'Link', 'Text'].includes(materialType)) {
-      return res.redirect('/admin/materials?error=' + encodeURIComponent('Invalid material type. Allowed: PDF, PPT, Video, Link, Text.'));
+    if (!['PDF', 'Video', 'Link', 'Text'].includes(materialType)) {
+      return res.redirect('/admin/materials?error=' +
+        encodeURIComponent('Invalid material type.'));
     }
 
-    let finalUrl = materialUrl ? materialUrl.trim() : '';
-    let finalEmbedUrl = '';
-    let fileName = '';
-    let fileSize = 0;
-
-    // Handle file upload (PDF or PPT/PPTX) — only process if a file was actually uploaded
-    if (uploadedFile && uploadedFile.size > 0) {
-      const originalName = uploadedFile.originalFilename || uploadedFile.name || uploadedFile.newFilename || 'material';
-      const ext = path.extname(originalName).toLowerCase();
-
-      if (materialType === 'PDF' && ext !== '.pdf') {
-        return res.redirect('/admin/materials?error=' + encodeURIComponent('For PDF material, please upload a valid .pdf file.'));
-      }
-      if (materialType === 'PPT' && ext !== '.ppt' && ext !== '.pptx') {
-        return res.redirect('/admin/materials?error=' + encodeURIComponent('For PPT material, please upload a valid .ppt or .pptx presentation file.'));
-      }
-
-      // Only allow file uploads for PDF and PPT types
-      if (materialType !== 'PDF' && materialType !== 'PPT') {
-        // Ignore uploaded file for Video/Link/Text types
-        uploadedFile = null;
-      } else {
-        const safeBase = originalName.replace(/[^a-zA-Z0-9_.-]/g, '_');
-        const targetFileName = Date.now() + '_' + safeBase;
-        const targetPath = path.join(__dirname, '..', 'public', 'materials', targetFileName);
-
-        const uploadedPath = uploadedFile.filepath || uploadedFile.path;
-        if (uploadedPath && fs.existsSync(uploadedPath)) {
-          fs.renameSync(uploadedPath, targetPath);
-          finalUrl = '/materials/' + targetFileName;
-          fileName = originalName;
-          fileSize = uploadedFile.size;
-        }
-      }
+    if (materialType === 'Text' && !content?.trim()) {
+      return res.redirect('/admin/materials?error=' +
+        encodeURIComponent('Please enter the written material.'));
     }
 
-    // Material type specific validations
-    if (materialType === 'Text') {
-      if (!content || !content.trim()) {
-        return res.redirect('/admin/materials?error=' + encodeURIComponent('Please enter written notes content.'));
-      }
-    } else if (materialType === 'Video') {
-      if (!finalUrl) {
-        return res.redirect('/admin/materials?error=' + encodeURIComponent('Please provide a valid YouTube video URL.'));
-      }
-      if (!isValidYouTubeUrl(finalUrl)) {
-        return res.redirect('/admin/materials?error=' + encodeURIComponent('Invalid YouTube URL. Please paste a valid YouTube video URL (e.g. https://www.youtube.com/watch?v=... or https://youtu.be/...).'));
-      }
-      finalEmbedUrl = getYouTubeEmbedUrl(finalUrl) || '';
-    } else if (materialType === 'PPT') {
-      if (!finalUrl) {
-        return res.redirect('/admin/materials?error=' + encodeURIComponent('Please upload a PPT/PPTX file or provide a presentation URL/path.'));
-      }
-      // Accept: uploaded file path (/materials/...), any http URL, or path with .ppt/.pptx
-      const isLocal = finalUrl.startsWith('/materials/');
-      const isWebUrl = validUrl(finalUrl);
-      const hasPptExt = /\.(ppt|pptx)$/i.test(finalUrl);
-      if (!isLocal && !isWebUrl && !hasPptExt) {
-        return res.redirect('/admin/materials?error=' + encodeURIComponent('PPT must be an uploaded file, a valid web URL, or a path ending in .ppt/.pptx.'));
-      }
-    } else if (materialType === 'PDF') {
-      if (!finalUrl) {
-        return res.redirect('/admin/materials?error=' + encodeURIComponent('Please upload a PDF file or provide a valid PDF URL/path.'));
-      }
-      const isLocal = finalUrl.startsWith('/materials/');
-      const isWebUrl = validUrl(finalUrl);
-      const hasPdfExt = /\.pdf$/i.test(finalUrl);
-      if (!isLocal && !isWebUrl && !hasPdfExt) {
-        return res.redirect('/admin/materials?error=' + encodeURIComponent('PDF must be an uploaded file, a valid http/https URL, or a path ending in .pdf.'));
-      }
-    } else if (materialType === 'Link') {
-      if (!finalUrl || !validUrl(finalUrl)) {
-        return res.redirect('/admin/materials?error=' + encodeURIComponent('Please enter a valid external link (http/https).'));
-      }
+    if (materialType !== 'Text' && !validUrl(materialUrl || '') && !materialUrl.startsWith('/materials/')) {
+      return res.redirect('/admin/materials?error=' +
+        encodeURIComponent('Please enter a valid URL (http/https) or material file path (/materials/...).'));
     }
 
     if (moduleId) {
       const selectedModule = await Module.findOne({ _id: moduleId, courseId });
-      if (!selectedModule) {
-        return res.redirect('/admin/materials?error=' + encodeURIComponent('The selected topic does not belong to that course.'));
-      }
+      if (!selectedModule) return res.redirect('/admin/materials?error=' + encodeURIComponent('The selected topic does not belong to that course.'));
     }
 
     await StudyMaterial.create({
@@ -986,19 +749,15 @@ exports.createMaterial = async (req, res, next) => {
       moduleId: moduleId || null,
       topicNumber: topicNumber ? Number(topicNumber) : null,
       materialType,
-      materialUrl: materialType === 'Text' ? '' : finalUrl,
-      embedUrl: finalEmbedUrl,
-      fileName,
-      fileSize,
+      materialUrl: materialType === 'Text' ? '' : materialUrl.trim(),
       content: materialType === 'Text' ? content.trim() : '',
       isPublished: true
     });
 
     res.redirect('/admin/materials?message=' +
-      encodeURIComponent(`Study material (${materialType}) added successfully.`));
+      encodeURIComponent('Study material added successfully.'));
   } catch (err) {
-    console.error('Create material error:', err);
-    res.redirect('/admin/materials?error=' + encodeURIComponent(err.message || 'Error creating material.'));
+    next(err);
   }
 };
 
@@ -1028,26 +787,10 @@ exports.editMaterialPage = async (req, res, next) => {
 
 exports.updateMaterial = async (req, res, next) => {
   try {
-    let body = req.body;
-    let uploadedFile = null;
-
-    const contentType = req.headers['content-type'] || '';
-    const isMultipart = contentType.includes('multipart/form-data');
-    if (isMultipart) {
-      try {
-        const parsed = await parseMaterialUpload(req);
-        body = parsed.fields;
-        uploadedFile = parsed.file;
-      } catch (parseErr) {
-        console.error('Multipart parse error (update):', parseErr);
-        return res.redirect(`/admin/materials/${req.params.id}/edit?error=` + encodeURIComponent('File upload failed: ' + (parseErr.message || 'Parse error')));
-      }
-    }
-
     const {
       title, description, courseId, moduleId, topicNumber, materialType,
       materialUrl, content
-    } = body;
+    } = req.body;
 
     const [material, course] = await Promise.all([
       StudyMaterial.findById(req.params.id),
@@ -1063,49 +806,19 @@ exports.updateMaterial = async (req, res, next) => {
         encodeURIComponent('Please select a valid subject.'));
     }
 
-    if (!['PDF', 'PPT', 'Video', 'Link', 'Text'].includes(materialType)) {
+    if (!['PDF', 'Video', 'Link', 'Text'].includes(materialType)) {
       return res.redirect(`/admin/materials/${req.params.id}/edit?error=` +
         encodeURIComponent('Invalid material type.'));
     }
 
-    let finalUrl = materialUrl ? materialUrl.trim() : material.materialUrl;
-    let finalEmbedUrl = material.embedUrl || '';
-
-    if (uploadedFile && uploadedFile.size > 0) {
-      const originalName = uploadedFile.originalFilename || uploadedFile.name || uploadedFile.newFilename || 'material';
-      const ext = path.extname(originalName).toLowerCase();
-
-      if (materialType === 'PDF' && ext !== '.pdf') {
-        return res.redirect(`/admin/materials/${req.params.id}/edit?error=` + encodeURIComponent('Please upload a valid .pdf file.'));
-      }
-      if (materialType === 'PPT' && ext !== '.ppt' && ext !== '.pptx') {
-        return res.redirect(`/admin/materials/${req.params.id}/edit?error=` + encodeURIComponent('Please upload a valid .ppt or .pptx presentation file.'));
-      }
-
-      if (materialType === 'PDF' || materialType === 'PPT') {
-        const safeBase = originalName.replace(/[^a-zA-Z0-9_.-]/g, '_');
-        const targetFileName = Date.now() + '_' + safeBase;
-        const targetPath = path.join(__dirname, '..', 'public', 'materials', targetFileName);
-
-        const uploadedPath = uploadedFile.filepath || uploadedFile.path;
-        if (uploadedPath && fs.existsSync(uploadedPath)) {
-          fs.renameSync(uploadedPath, targetPath);
-          finalUrl = '/materials/' + targetFileName;
-          material.fileName = originalName;
-          material.fileSize = uploadedFile.size;
-        }
-      }
+    if (materialType === 'Text' && !content?.trim()) {
+      return res.redirect(`/admin/materials/${req.params.id}/edit?error=` +
+        encodeURIComponent('Please enter the written material.'));
     }
 
-    if (materialType === 'Text') {
-      if (!content || !content.trim()) {
-        return res.redirect(`/admin/materials/${req.params.id}/edit?error=` + encodeURIComponent('Please enter the written material.'));
-      }
-    } else if (materialType === 'Video') {
-      if (!finalUrl || !isValidYouTubeUrl(finalUrl)) {
-        return res.redirect(`/admin/materials/${req.params.id}/edit?error=` + encodeURIComponent('Please enter a valid YouTube video URL.'));
-      }
-      finalEmbedUrl = getYouTubeEmbedUrl(finalUrl) || '';
+    if (materialType !== 'Text' && !validUrl(materialUrl || '') && !materialUrl.startsWith('/materials/')) {
+      return res.redirect(`/admin/materials/${req.params.id}/edit?error=` +
+        encodeURIComponent('Please enter a valid URL or material path.'));
     }
 
     if (moduleId) {
@@ -1113,14 +826,13 @@ exports.updateMaterial = async (req, res, next) => {
       if (!selectedModule) return res.redirect(`/admin/materials/${req.params.id}/edit?error=` + encodeURIComponent('The selected topic does not belong to that course.'));
     }
 
-    material.title = title ? title.trim() : material.title;
+    material.title = title.trim();
     material.description = description ? description.trim() : '';
     material.courseId = courseId;
     material.moduleId = moduleId || null;
     material.topicNumber = topicNumber ? Number(topicNumber) : null;
     material.materialType = materialType;
-    material.materialUrl = materialType === 'Text' ? '' : finalUrl;
-    material.embedUrl = finalEmbedUrl;
+    material.materialUrl = materialType === 'Text' ? '' : materialUrl.trim();
     material.content = materialType === 'Text' ? content.trim() : '';
 
     await material.save();
@@ -1128,8 +840,7 @@ exports.updateMaterial = async (req, res, next) => {
     res.redirect('/admin/materials?message=' +
       encodeURIComponent('Study material updated successfully.'));
   } catch (err) {
-    console.error('Update material error:', err);
-    res.redirect(`/admin/materials/${req.params.id}/edit?error=` + encodeURIComponent(err.message || 'Error updating material.'));
+    next(err);
   }
 };
 

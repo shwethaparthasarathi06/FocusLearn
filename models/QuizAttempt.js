@@ -22,6 +22,18 @@ const answerRecordSchema = new mongoose.Schema(
       type: Boolean,
       required: true
     },
+    options: {
+      type: [String],
+      default: []
+    },
+    selectedOptionText: {
+      type: String,
+      default: ''
+    },
+    correctOptionText: {
+      type: String,
+      default: ''
+    },
     explanation: {
       type: String
     }
@@ -95,11 +107,53 @@ const quizAttemptSchema = new mongoose.Schema(
     timeSpentSeconds: {
       type: Number,
       default: 0
+    },
+    maxScore: {
+      type: Number,
+      default: 10
+    },
+    correctAnswersCount: {
+      type: Number,
+      default: 0
+    },
+    incorrectAnswersCount: {
+      type: Number,
+      default: 0
+    },
+    unansweredCount: {
+      type: Number,
+      default: 0
     }
   },
   {
-    timestamps: true
+    timestamps: true,
+    toJSON: { virtuals: true },
+    toObject: { virtuals: true }
   }
 );
+
+// Method to ensure accurate count calculations even for legacy attempts
+quizAttemptSchema.methods.getCalculatedCounts = function () {
+  let correct = 0;
+  let incorrect = 0;
+  let unanswered = 0;
+  if (this.answers && Array.isArray(this.answers)) {
+    this.answers.forEach(a => {
+      if (a.selectedOption === -1) {
+        unanswered += 1;
+      } else if (a.isCorrect) {
+        correct += 1;
+      } else {
+        incorrect += 1;
+      }
+    });
+  }
+  return {
+    correct: (typeof this.correctAnswersCount === 'number' && this.correctAnswersCount > 0) ? this.correctAnswersCount : correct,
+    incorrect: (typeof this.incorrectAnswersCount === 'number' && this.incorrectAnswersCount > 0) ? this.incorrectAnswersCount : incorrect,
+    unanswered: (typeof this.unansweredCount === 'number' && this.unansweredCount > 0) ? this.unansweredCount : unanswered,
+    maxScore: this.maxScore || this.totalQuestions || 10
+  };
+};
 
 module.exports = mongoose.model('QuizAttempt', quizAttemptSchema);

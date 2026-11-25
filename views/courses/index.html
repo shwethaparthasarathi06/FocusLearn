@@ -1,4 +1,3 @@
-
 <%- include('../partials/header.html') %>
 <%- include('../partials/sidebar.html') %>
 
@@ -8,11 +7,8 @@
     <div class="courses-header-bar d-flex justify-content-between align-items-center flex-wrap gap-2">
         <div>
             <h2 class="courses-heading mb-1">OUR COURSES (<%= courses.length %>)</h2>
-            <span class="courses-subheading">
-                Select any course to access learning modules, focus study rooms, and 10-question mastery quizzes
-            </span>
+            <span class="courses-subheading">Select any course to access learning modules, focus study rooms, and 10-question mastery quizzes</span>
         </div>
-
         <% if (locals.isAuthenticated && locals.currentUser && locals.currentUser.role === 'admin') { %>
             <a href="/admin/subjects" class="btn btn-warning text-dark fw-bold btn-sm shadow-sm">
                 <i class="bi bi-gear-fill me-1"></i> Admin: Manage Courses
@@ -22,95 +18,62 @@
 
     <div class="grid">
         <% courses.forEach(function(course) { %>
-
             <div class="course-box">
-
-                <!-- Course image and title aligned to the left -->
-                <div class="course-top d-flex justify-content-start align-items-center text-start">
-                    <img
-                        src="<%= course.image %>"
-                        alt="<%= course.title %>"
-                        class="course-img-sm"
-                    >
-
-                    <h3 class="text-start mb-0">
+                <div class="course-top">
+                    <img src="<%= course.image %>" alt="<%= course.title %>" class="course-img-sm">
+                    <h3>
                         <%= course.title.toUpperCase() %>
                     </h3>
                 </div>
-
                 <div class="course-info">
-
-                    <!-- Course code and quiz count -->
                     <div class="d-flex justify-content-between align-items-center mb-2">
-                        <span class="badge bg-primary">
-                            <%= course.code %>
-                        </span>
-
+                        <span class="badge bg-primary"><%= course.code %></span>
                         <% if (course.quizCount && course.quizCount > 0) { %>
                             <span class="badge bg-success-subtle text-success border border-success-subtle small">
-                                <i class="bi bi-patch-check-fill me-1"></i>
-                                <%= course.quizCount %> Quizzes
+                                <i class="bi bi-patch-check-fill me-1"></i><%= course.quizCount %> Quizzes
                             </span>
                         <% } %>
                     </div>
 
-                    <!-- Duration and module count -->
+                    <h4>
+                        <%= course.title.toUpperCase() %>
+                    </h4>
+
                     <div class="course-duration">
-                        <span>
-                            <i class="bi bi-clock me-1"></i>
+                        <span><i class="bi bi-clock me-1"></i>
                             <%= course.durationHours %> hrs
                         </span>
-
-                        <span>
-                            <i class="bi bi-layers me-1"></i>
-                            <%= course.lessonCount %>
-                            <%= course.lessonCount === 1 ? 'Module' : 'Modules' %>
+                        <span><i class="bi bi-layers me-1"></i>
+                            <%= course.lessonCount %> <%= (course.lessonCount === 1) ? 'Module' : 'Modules' %>
                         </span>
                     </div>
 
-                    <!-- Student progress -->
-                    <% if (
-                        locals.userProgress &&
-                        userProgress[course._id.toString()] &&
-                        userProgress[course._id.toString()].completionPercentage > 0
-                    ) {
+                    <% if (locals.userProgress && userProgress[course._id.toString()] &&
+                        userProgress[course._id.toString()].completionPercentage > 0) {
                         const prog = userProgress[course._id.toString()];
                     %>
-
                         <div class="course-progress-box">
                             <div class="course-progress-label-row">
                                 <span>Course Mastery</span>
                                 <span><%= prog.completionPercentage %>%</span>
                             </div>
-
                             <div class="course-progress-mini">
-                                <div
-                                    class="course-progress-fill"
-                                    data-progress="<%= prog.completionPercentage %>"
-                                    style="width: <%= prog.completionPercentage %>%;">
-                                </div>
+                                <div class="course-progress-fill" data-progress="<%= prog.completionPercentage %>" style="width: <%= prog.completionPercentage %>%;"></div>
                             </div>
                         </div>
-
                     <% } %>
 
-                    <!-- Start or Continue Learning -->
                     <div class="course-button-row mt-3">
-                        <a
-                            href="/courses/<%= course.slug %>"
-                            class="btn-focus btn-course-main w-100 text-center"
-                        >
-                            <%= (
-                                locals.userProgress &&
-                                userProgress[course._id.toString()] &&
-                                userProgress[course._id.toString()].completionPercentage > 0
-                            ) ? 'Continue Learning' : 'Start Learning' %>
+                        <a href="/courses/<%= course.slug %>" class="btn-focus btn-course-main w-100 text-center">
+                            <%= (locals.userProgress && userProgress[course._id.toString()] &&
+                                userProgress[course._id.toString()].completionPercentage > 0) ?
+                                'Continue Learning' : 'Start Learning' %>
                         </a>
                     </div>
 
+
                 </div>
             </div>
-
         <% }); %>
     </div>
 </div>
