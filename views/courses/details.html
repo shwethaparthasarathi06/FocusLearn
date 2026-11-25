@@ -102,14 +102,7 @@
                 </div>
               </div>
 
-              <!-- Key Concepts Chips -->
-              <% if (mod.keyConcepts && mod.keyConcepts.length > 0) { %>
-                <div class="d-flex flex-wrap gap-1 mb-3">
-                  <% mod.keyConcepts.forEach(concept => { %>
-                    <span class="badge bg-light text-secondary border small">#<%= concept %></span>
-                  <% }) %>
-                </div>
-              <% } %>
+
 
               <!-- Sub-topics List (if available) -->
               <% if (mod.topics && mod.topics.length > 1) { %>
@@ -141,25 +134,7 @@
                       <i class="bi bi-play-circle-fill me-1"></i> Study Room (Timer + <%= mod.materialType || 'PDF' %>)
                     </a>
 
-                    <!-- Read Lesson View -->
-                    <a href="/lessons/<%= mod._id %>" class="btn btn-outline-secondary px-3">
-                      <i class="bi bi-book-half me-1"></i> Read Notes
-                    </a>
 
-                    <!-- Document / Video Link -->
-                    <% if (mod.materialType === 'PPT' || (mod.pptUrl && !mod.videoUrl)) { %>
-                      <a href="<%= mod.pptUrl || mod.pdfUrl %>" download class="btn btn-outline-warning text-dark px-3 fw-semibold">
-                        <i class="bi bi-file-earmark-slides-fill me-1"></i> Topic PPT
-                      </a>
-                    <% } else if (mod.materialType === 'Video' || mod.videoUrl) { %>
-                      <a href="<%= mod.videoUrl %>" target="_blank" rel="noopener" class="btn btn-outline-danger px-3 fw-semibold">
-                        <i class="bi bi-youtube me-1"></i> Watch Video
-                      </a>
-                    <% } else if (mod.pdfUrl) { %>
-                      <a href="<%= mod.pdfUrl %>" target="_blank" class="btn btn-outline-danger px-3">
-                        <i class="bi bi-file-earmark-pdf-fill me-1"></i> Topic PDF
-                      </a>
-                    <% } %>
                   <% } %>
                 </div>
 
