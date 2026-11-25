@@ -50,7 +50,7 @@
       <label class="form-label">Material Type</label>
       <select name="materialType" id="materialType"
               class="form-select mb-3">
-        <% ['PDF', 'Video', 'Link', 'Text'].forEach(type => { %>
+        <% ['PDF', 'PPT', 'Video', 'Link', 'Text'].forEach(type => { %>
           <option value="<%= type %>"
             <%= material.materialType === type ? 'selected' : '' %>>
             <%= type %>

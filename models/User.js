@@ -46,6 +46,10 @@ const userSchema = new mongoose.Schema(
       type: Date,
       default: null
     },
+    lastLoginAt: {
+      type: Date,
+      default: null
+    },
     phone: {
       type: String,
       trim: true,

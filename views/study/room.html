@@ -18,9 +18,9 @@
 
         <!-- Main Content: Split PDF viewer & Side Timer -->
         <div class="study-room-layout">
-            <!-- Main Area: PDF Viewer -->
+            <!-- Main Area: PDF or Video Viewer -->
             <main class="study-room-pdf-panel position-relative">
-                <!-- 10-Second Floating Alert Banner over PDF -->
+                <!-- 10-Second Floating Alert Banner over Viewer -->
                 <div id="floating-alert-10sec" class="floating-alert-10sec d-none">
                     <div class="d-flex align-items-center justify-content-center gap-2">
                         <i class="bi bi-alarm-fill fs-5"></i>
@@ -28,17 +28,39 @@
                     </div>
                 </div>
 
-                <% if (pdfUrl) { %>
+                <% if (typeof videoEmbedUrl !== 'undefined' && videoEmbedUrl) { %>
+                    <div class="w-100 h-100 d-flex flex-column bg-black">
+                        <iframe id="video-viewer-frame" src="<%= videoEmbedUrl %>" class="w-100 h-100 border-0 flex-grow-1"
+                            title="<%= mod.title %> Video Lecture"
+                            style="min-height: 520px;"
+                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                            allowfullscreen>
+                        </iframe>
+                    </div>
+                <% } else if (typeof pptUrl !== 'undefined' && pptUrl) { %>
+                    <!-- Client-side PPTX renderer via local pptx-preview -->
+                    <div id="pptx-viewer-container" style="width:100%;height:100%;min-height:520px;overflow:hidden;background:#1e1e2e;display:flex;flex-direction:column;align-items:center;justify-content:center;">
+                        <div id="pptx-loading" class="d-flex flex-column align-items-center justify-content-center w-100 h-100 text-white">
+                            <div class="spinner-border text-warning mb-3" role="status" style="width:3rem;height:3rem;"></div>
+                            <p class="mb-1 fw-semibold">Loading Presentation…</p>
+                            <p class="text-white-50 small">Rendering slides, please wait.</p>
+                        </div>
+                        <div id="pptx-slides-output" class="w-100 h-100 d-none" style="justify-content:center;align-items:center;"></div>
+                    </div>
+                    <script>
+                        window.__PPT_URL__ = '<%= pptUrl %>';
+                    </script>
+                <% } else if (pdfUrl) { %>
                     <iframe id="pdf-viewer-frame" src="<%= pdfUrl %>#toolbar=1&navpanes=0" class="pdf-iframe"
                         title="<%= mod.title %> PDF Material">
                     </iframe>
-                    <% } else { %>
-                        <div class="p-5 text-center my-auto">
-                            <i class="bi bi-file-earmark-pdf fs-1 text-muted mb-3 d-block"></i>
-                            <h4>PDF Material Not Available</h4>
-                            <p class="text-muted">No material file has been uploaded for this module yet.</p>
-                        </div>
-                        <% } %>
+                <% } else { %>
+                    <div class="p-5 text-center my-auto">
+                        <i class="bi bi-file-earmark-play fs-1 text-muted mb-3 d-block"></i>
+                        <h4>Study Material Not Available</h4>
+                        <p class="text-muted">No material file has been uploaded for this module yet.</p>
+                    </div>
+                <% } %>
             </main>
 
             <!-- Side Panel: Focus Timer -->
@@ -156,7 +178,64 @@
         const IS_COURSE_COMPLETED = <%= (typeof progress !== 'undefined' && progress && progress.isCourseCompleted) ? 'true' : 'false' %>;
     </script>
     <script src="/js/studyRoom.js"></script>
+    <% if (typeof pptUrl !== 'undefined' && pptUrl) { %>
+    <!-- Local pptx-preview: pure client-side PPTX renderer -->
+    <script src="/js/pptx-preview.umd.js"></script>
+    <script>
+    (async function() {
+        var pptUrl = window.__PPT_URL__;
+        var loadingEl = document.getElementById('pptx-loading');
+        var outputEl = document.getElementById('pptx-slides-output');
+        var containerEl = document.getElementById('pptx-viewer-container');
+        if (!pptUrl || !outputEl) return;
 
-    <%- include('../partials/materials-list.html') %>
+        function showError(msg) {
+            if (!loadingEl) return;
+            loadingEl.classList.remove('d-none');
+            loadingEl.classList.add('d-flex');
+            loadingEl.innerHTML =
+                '<div class="text-center p-5">' +
+                '<i class="bi bi-exclamation-triangle-fill text-warning display-3 mb-3 d-block"></i>' +
+                '<h5 class="text-white mb-2">Could not render presentation inline</h5>' +
+                '<p class="text-white-50 small mb-4">' + (msg || 'Please try refreshing or open the file directly.') + '</p>' +
+                '<a href="' + pptUrl + '" class="btn btn-warning btn-lg fw-bold px-4" download>' +
+                '<i class="bi bi-download me-2"></i>Download Presentation (.pptx)</a>' +
+                '</div>';
+        }
+
+        try {
+            if (!window.pptxPreview || typeof window.pptxPreview.init !== 'function') {
+                throw new Error('Presentation viewer failed to initialize.');
+            }
+            var response = await fetch(encodeURI(pptUrl));
+            if (!response.ok) {
+                throw new Error('Failed to load presentation file (HTTP ' + response.status + ').');
+            }
+            var arrayBuffer = await response.arrayBuffer();
+            var availableWidth = Math.max(600, (containerEl ? containerEl.clientWidth : 960) - 24);
+            var availableHeight = Math.max(520, (containerEl ? containerEl.clientHeight : 640) - 16);
+
+            if (loadingEl) {
+                loadingEl.classList.remove('d-flex');
+                loadingEl.classList.add('d-none');
+            }
+            outputEl.classList.remove('d-none');
+            outputEl.classList.add('d-flex');
+
+            var pptxViewer = window.pptxPreview.init(outputEl, {
+                width: availableWidth,
+                height: availableHeight,
+                mode: 'list'
+            });
+            await pptxViewer.preview(arrayBuffer);
+        } catch (err) {
+            console.error('PPTX render error:', err);
+            outputEl.classList.remove('d-flex');
+            outputEl.classList.add('d-none');
+            showError(err && err.message);
+        }
+    })();
+    </script>
+    <% } %>
 
 <%- include('../partials/footer.html') %>

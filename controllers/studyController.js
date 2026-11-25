@@ -3,6 +3,7 @@ const Course = require('../models/Course');
 const Module = require('../models/Module');
 const StudentProgress = require('../models/StudentProgress');
 const Quiz = require('../models/Quiz');
+const QuizAttempt = require('../models/QuizAttempt');
 const StudyMaterial = require('../models/StudyMaterial');
 
 /**
@@ -19,10 +20,53 @@ exports.getStudyRoom = async (req, res, next) => {
 
     const course = await Course.findById(mod.courseId);
     if (!course) return res.status(404).render('error', { message: 'Course not found' });
+
+    if (req.session.userId) {
+      const priorAttempts = await QuizAttempt.find({ userId: req.session.userId, moduleId: mod._id }).select('passed').lean();
+      if (priorAttempts.length > 0 && !priorAttempts.some(a => a.passed)) {
+        req.flash('error', 'This topic is locked because you did not pass its quiz.');
+        return res.redirect(`/courses/${course.slug}`);
+      }
+    }
+
     const materials = await StudyMaterial.find({ courseId: course._id, isPublished: true }).populate('moduleId').sort({ createdAt: -1 });
 
+    // Detect YouTube / Video URL
+    let videoUrl = mod.videoUrl || null;
+    if (!videoUrl && mod.pdfUrl && (mod.pdfUrl.includes('youtube.com') || mod.pdfUrl.includes('youtu.be'))) {
+      videoUrl = mod.pdfUrl;
+    }
+    if (!videoUrl && mod.materialType === 'Video') {
+      videoUrl = mod.pdfUrl || (mod.topics && mod.topics[0] && mod.topics[0].pdfUrl) || null;
+    }
+    // Also check study materials for this module or course
+    if (!videoUrl) {
+      const videoMat = materials.find(m => m.materialType === 'Video' && (String(m.moduleId) === String(mod._id) || !m.moduleId));
+      if (videoMat && videoMat.materialUrl) {
+        videoUrl = videoMat.materialUrl;
+      }
+    }
+
+    let videoEmbedUrl = null;
+    if (videoUrl) {
+      const ytMatch = videoUrl.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/|shorts\/))([A-Za-z0-9_-]{11})/);
+      videoEmbedUrl = ytMatch ? `https://www.youtube.com/embed/${ytMatch[1]}?autoplay=1` : videoUrl;
+    }
+
+    // Detect PPT / Presentation URL
+    let pptUrl = mod.pptUrl || null;
+    if (!pptUrl && (mod.materialType === 'PPT' || (mod.pdfUrl && (mod.pdfUrl.endsWith('.pptx') || mod.pdfUrl.endsWith('.ppt'))))) {
+      pptUrl = mod.pdfUrl;
+    }
+    if (!pptUrl && mod.topics && mod.topics[0] && (mod.topics[0].pdfUrl.endsWith('.pptx') || mod.topics[0].pdfUrl.endsWith('.ppt'))) {
+      pptUrl = mod.topics[0].pdfUrl;
+    }
+
     // Get the PDF URL from the first topic or module pdfUrl
-    const pdfUrl = (mod.topics && mod.topics.length > 0 && mod.topics[0].pdfUrl) ? mod.topics[0].pdfUrl : (mod.pdfUrl || null);
+    let pdfUrl = (mod.topics && mod.topics.length > 0 && mod.topics[0].pdfUrl) ? mod.topics[0].pdfUrl : (mod.pdfUrl || null);
+    if (pdfUrl && (pdfUrl.includes('youtube.com') || pdfUrl.includes('youtu.be') || pdfUrl.endsWith('.pptx') || pdfUrl.endsWith('.ppt'))) {
+      pdfUrl = null;
+    }
 
     // Check for active session
     const activeSession = await StudySession.findOne({
@@ -46,6 +90,9 @@ exports.getStudyRoom = async (req, res, next) => {
       mod,
       course,
       pdfUrl,
+      pptUrl,
+      videoUrl,
+      videoEmbedUrl,
       activeSession,
       testDuration,
       progress,

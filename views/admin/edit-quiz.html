@@ -37,12 +37,20 @@
 
     <form action="/admin/quizzes/<%= quiz._id %>?_method=PUT" method="POST">
       <div class="row g-3 mb-4">
-        <div class="col-md-8">
+        <div class="col-md-6">
           <label class="form-label fw-semibold">Quiz Title</label>
           <input type="text" name="title" class="form-control" value="<%= quiz.title %>" required>
         </div>
 
-        <div class="col-md-4">
+        <div class="col-md-3">
+          <label class="form-label fw-semibold">Quiz Purpose / Type</label>
+          <select name="quizType" class="form-select fw-semibold">
+            <option value="regular" <%= (quiz.quizType !== 'redo') ? 'selected' : '' %>>Original Assessment</option>
+            <option value="redo" <%= (quiz.quizType === 'redo') ? 'selected' : '' %>>Course Redo Assessment</option>
+          </select>
+        </div>
+
+        <div class="col-md-3">
           <label class="form-label fw-semibold">Passing Score (/10)</label>
           <input type="number" name="passingScore" class="form-control" value="<%= quiz.passingScore || 6 %>" min="1" max="10" required>
         </div>

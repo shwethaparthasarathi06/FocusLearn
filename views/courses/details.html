@@ -13,19 +13,14 @@
 
   <!-- Course Banner -->
   <div class="course-detail-banner card shadow-sm border-0 p-4 mb-4">
-    <div class="d-flex align-items-center gap-4 flex-wrap">
+    <div class="d-flex align-items-center gap-4 flex-wrap w-100">
       <% if (course.image) { %>
         <img src="<%= course.image %>" alt="<%= course.title %>" class="course-banner-img rounded shadow-sm" style="width: 100px; height: 100px; object-fit: contain; background: white; padding: 10px;">
       <% } %>
       <div class="flex-grow-1">
         <div class="d-flex align-items-center gap-2 mb-2">
           <span class="badge bg-primary px-3 py-1 fs-6"><%= course.code %></span>
-          <span class="text-white-50 small">&bull; <%= course.category || 'Master of Computer Applications' %></span>
-          <% if (locals.isAuthenticated && locals.currentUser && locals.currentUser.role === 'admin') { %>
-            <a href="/admin/modules?courseId=<%= course._id %>" class="badge bg-warning text-dark text-decoration-none ms-auto">
-              <i class="bi bi-plus-circle me-1"></i> Admin: Add Topic
-            </a>
-          <% } %>
+          <span class="text-muted small">&bull; <%= course.category || 'Master of Computer Applications' %></span>
         </div>
         <h1 class="course-banner-title fw-bold mb-3 text-white"><%= course.title %></h1>
         
@@ -42,7 +37,7 @@
 
     <!-- Course Progress Bar -->
     <% if (progress && modules.length > 0) { %>
-      <div class="mt-3 pt-3 border-top border-white-50">
+      <div class="mt-4 pt-3 border-top w-100">
         <div class="d-flex justify-content-between align-items-center mb-1">
           <span class="fw-bold small text-white">Your Overall Course Progress</span>
           <span class="fw-bold text-white"><%= progress.completionPercentage %>%</span>
@@ -74,34 +69,10 @@
           const quizDoc = quizzesByModule && quizzesByModule[mid];
           const attempt = attemptsByModule && attemptsByModule[mid];
           const isPassed = attempt && attempt.passed;
-
-          // Dynamically retrieve actual topic names for this module from the database
-          const moduleTopics = [];
-          if (mod.topics && mod.topics.length > 0) {
-            mod.topics.forEach(t => {
-              const tTitle = (t.title || '').trim();
-              if (tTitle && tTitle.toLowerCase() !== (mod.title || '').trim().toLowerCase()) {
-                if (!moduleTopics.includes(tTitle)) moduleTopics.push(tTitle);
-              }
-            });
-          }
-          if (mod.keyConcepts && mod.keyConcepts.length > 0) {
-            mod.keyConcepts.forEach(c => {
-              const cTitle = (c || '').trim();
-              if (cTitle && !moduleTopics.some(item => item.toLowerCase() === cTitle.toLowerCase())) {
-                moduleTopics.push(cTitle);
-              }
-            });
-          }
-          if (moduleTopics.length === 0 && mod.topics && mod.topics.length > 0) {
-            mod.topics.forEach(t => {
-              const tTitle = (t.title || '').trim();
-              if (tTitle && !moduleTopics.includes(tTitle)) moduleTopics.push(tTitle);
-            });
-          }
+          const isFailedLocked = attempt && !attempt.passed;
         %>
           <div class="col-12">
-            <div class="card shadow-sm border-0 p-4 h-100 <%= isPassed ? 'border-start border-success border-4' : '' %>">
+            <div class="card shadow-sm border-0 p-4 h-100 <%= isPassed ? 'border-start border-success border-4' : (isFailedLocked ? 'border-start border-danger border-4' : '') %>">
               <div class="d-flex justify-content-between align-items-start flex-wrap gap-2 mb-2">
                 <div>
                   <div class="d-flex align-items-center gap-2 mb-2">
@@ -120,8 +91,8 @@
                 <div>
                   <% if (attempt) { %>
                     <div class="text-end">
-                      <span class="badge <%= isPassed ? 'bg-success' : 'bg-warning text-dark' %> p-2">
-                        <i class="bi <%= isPassed ? 'bi-trophy-fill' : 'bi-arrow-clockwise' %> me-1"></i>
+                      <span class="badge <%= isPassed ? 'bg-success' : 'bg-danger' %> p-2">
+                        <i class="bi <%= isPassed ? 'bi-trophy-fill' : 'bi-lock-fill' %> me-1"></i>
                         Score: <%= attempt.score %>/10 (<%= attempt.percentage %>%)
                       </span>
                     </div>
@@ -129,17 +100,20 @@
                 </div>
               </div>
 
-              <!-- Topics List / Tags -->
-              <% if (moduleTopics && moduleTopics.length > 0) { %>
-                <div class="module-topics-section my-3">
-                  <div class="small fw-bold text-secondary mb-2">
-                    <i class="bi bi-tags-fill me-1 text-primary"></i>Topics:
-                  </div>
-                  <div class="d-flex flex-wrap gap-2">
-                    <% moduleTopics.forEach(topic => { %>
-                      <span class="topic-tag">
-                        <%= topic %>
-                      </span>
+
+
+              <!-- Sub-topics List (if available) -->
+              <% if (mod.topics && mod.topics.length > 1) { %>
+                <div class="bg-light p-3 rounded mb-3">
+                  <h6 class="fw-bold small text-muted text-uppercase mb-2">Sub-topics in this module:</h6>
+                  <ol class="mb-0 ps-3 small">
+                    <% mod.topics.forEach(t => { %>
+                      <li class="mb-1">
+                        <strong><%= t.title %></strong> (<%= t.estimatedMinutes %> mins)
+                        <% if (t.pdfUrl) { %>
+                          &mdash; <a href="<%= t.pdfUrl %>" target="_blank" class="text-danger text-decoration-none"><i class="bi bi-file-earmark-pdf"></i> PDF</a>
+                        <% } %>
+                      </li>
                     <% }) %>
                   </div>
                 </div>
@@ -148,21 +122,17 @@
               <!-- Action Buttons Row -->
               <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 pt-3 border-top mt-2">
                 <div class="d-flex gap-2 flex-wrap">
-                  <!-- Study Room with Timer & PDF -->
-                  <a href="/study/room/<%= mod._id %>" class="btn btn-primary px-3 fw-semibold">
-                    <i class="bi bi-play-circle-fill me-1"></i> Study Room (Timer + PDF)
-                  </a>
-
-                  <!-- Read Lesson View -->
-                  <a href="/lessons/<%= mod._id %>" class="btn btn-outline-secondary px-3">
-                    <i class="bi bi-book-half me-1"></i> Read Notes
-                  </a>
-
-                  <!-- PDF Document Link -->
-                  <% if (mod.pdfUrl) { %>
-                    <a href="<%= mod.pdfUrl %>" target="_blank" class="btn btn-outline-danger px-3">
-                      <i class="bi bi-file-earmark-pdf-fill me-1"></i> Topic PDF
+                  <% if (isFailedLocked) { %>
+                    <span class="text-danger small fw-semibold py-1">
+                      <i class="bi bi-lock-fill me-1"></i> Topic locked — quiz attempt failed (cannot view topic or retake quiz)
+                    </span>
+                  <% } else { %>
+                    <!-- Study Room with Timer & PDF/Video/PPT -->
+                    <a href="/study/room/<%= mod._id %>" class="btn btn-primary px-3 fw-semibold">
+                      <i class="bi bi-play-circle-fill me-1"></i> Study Room (Timer + <%= mod.materialType || 'PDF' %>)
                     </a>
+
+
                   <% } %>
                 </div>
 
@@ -174,14 +144,19 @@
                         <span class="text-success small fw-bold">
                           <i class="bi bi-patch-check-fill text-success fs-5"></i> Mastery Achieved
                         </span>
-                        <a href="/quizzes/<%= mod._id %>" class="btn btn-sm btn-outline-success">
-                          <i class="bi bi-arrow-clockwise me-1"></i> Retake Quiz
+                        <a href="/quizzes/history/<%= attempt._id %>?from=course" class="btn btn-sm btn-outline-success">
+                          <i class="bi bi-file-earmark-text me-1"></i> View Answers
                         </a>
                       </div>
                     <% } else if (attempt) { %>
-                      <a href="/quizzes/<%= mod._id %>" class="btn btn-warning text-dark fw-bold px-3">
-                        <i class="bi bi-arrow-repeat me-1"></i> Retake 10-Q Quiz
-                      </a>
+                      <div class="d-inline-flex align-items-center gap-2">
+                        <span class="badge bg-secondary-subtle text-secondary border p-2">
+                          <i class="bi bi-lock-fill me-1"></i> Quiz Locked (Failed)
+                        </span>
+                        <a href="/quizzes/history/<%= attempt._id %>?from=course" class="btn btn-sm btn-outline-danger">
+                          <i class="bi bi-file-earmark-text me-1"></i> View Answers
+                        </a>
+                      </div>
                     <% } else { %>
                       <a href="/quizzes/<%= mod._id %>" class="btn btn-success fw-bold px-3 shadow-sm">
                         <i class="bi bi-patch-check-fill me-1"></i> Take 10-Question Quiz
@@ -208,10 +183,6 @@
     <% } %>
   </section>
 
-  <!-- Published Study Materials List -->
-  <div id="materials">
-    <%- include('../partials/materials-list.html') %>
-  </div>
 </div>
 
 <%- include('../partials/footer.html') %>

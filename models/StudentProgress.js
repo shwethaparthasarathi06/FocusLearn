@@ -48,6 +48,35 @@ const studentProgressSchema = new mongoose.Schema(
     },
     completedAt: {
       type: Date
+    },
+    // Course Redo Tracking (Max 1 redo allowed per course per student)
+    redoCount: {
+      type: Number,
+      default: 0
+    },
+    maxRedoAllowed: {
+      type: Number,
+      default: 1
+    },
+    redoStatus: {
+      type: String,
+      enum: ['none', 'in-progress', 'completed'],
+      default: 'none'
+    },
+    redoStartedAt: {
+      type: Date
+    },
+    redoCompletedAt: {
+      type: Date
+    },
+    completedRedoModules: [completedModuleSchema],
+    redoCompletionPercentage: {
+      type: Number,
+      default: 0
+    },
+    isRedoCompleted: {
+      type: Boolean,
+      default: false
     }
   },
   {

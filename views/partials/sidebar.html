@@ -28,7 +28,7 @@
         </a>
         <% } %>
 
-            <% if (locals.isAuthenticated && locals.currentUser) { %>
+            <% if (locals.isAuthenticated && locals.currentUser && locals.currentUser.role !== 'admin') { %>
                 <a href="/dashboard/profile"
                     class="<%= (typeof currentPath !== 'undefined' && currentPath === '/dashboard/profile') ? 'active' : '' %>">
                     <i class="bi bi-person-circle me-2"></i>MY PROFILE
@@ -58,7 +58,7 @@
                                         <div>
                                             <%= currentUser.name %>
                                         </div>
-                                        <small class="sidebar-email">
+                                        <small class="sidebar-email" title="<%= currentUser.email %>">
                                             <%= currentUser.email %>
                                         </small>
                                     </div>

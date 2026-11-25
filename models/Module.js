@@ -15,7 +15,11 @@ const topicSchema = new mongoose.Schema({
   },
   pdfUrl: {
     type: String,
-    required: true
+    default: ''
+  },
+  videoUrl: {
+    type: String,
+    default: ''
   }
 });
 
@@ -61,6 +65,19 @@ const moduleSchema = new mongoose.Schema(
     topics: [topicSchema],
     pdfUrl: {
       type: String
+    },
+    videoUrl: {
+      type: String,
+      default: ''
+    },
+    materialType: {
+      type: String,
+      enum: ['PDF', 'Video', 'PPT', 'Text'],
+      default: 'PDF'
+    },
+    pptUrl: {
+      type: String,
+      default: ''
     },
     order: {
       type: Number,

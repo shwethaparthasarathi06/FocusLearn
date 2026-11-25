@@ -14,11 +14,9 @@
     <i class="bi bi-shield-lock-fill text-warning me-2"></i>FocusLearn Admin
   </a>
   <div>
-    <a href="/admin/subjects" class="btn btn-outline-light btn-sm me-2">Courses</a>
-    <a href="/admin/modules" class="btn btn-light btn-sm me-2 fw-semibold">Topics/Modules</a>
-    <a href="/admin/quizzes" class="btn btn-outline-light btn-sm me-2">Quizzes</a>
-    <a href="/admin/materials" class="btn btn-outline-light btn-sm me-2">Materials</a>
-    <a href="/admin" class="btn btn-outline-light btn-sm me-2">Dashboard</a>
+    <a href="/admin" class="btn btn-outline-light btn-sm">
+      <i class="bi bi-arrow-left me-1"></i> Back
+    </a>
   </div>
 </nav>
 
@@ -176,7 +174,15 @@
                 </td>
                 <td><%= mod.estimatedMinutes %> mins</td>
                 <td>
-                  <% if (mod.pdfUrl) { %>
+                  <% if (mod.materialType === 'Video' || mod.videoUrl) { %>
+                    <a href="<%= mod.videoUrl %>" target="_blank" class="btn btn-sm btn-outline-danger py-0 px-2">
+                      <i class="bi bi-youtube"></i> YouTube
+                    </a>
+                  <% } else if (mod.materialType === 'PPT' || mod.pptUrl) { %>
+                    <a href="<%= mod.pptUrl || mod.pdfUrl %>" target="_blank" class="btn btn-sm btn-outline-warning text-dark py-0 px-2">
+                      <i class="bi bi-file-earmark-slides"></i> PPT
+                    </a>
+                  <% } else if (mod.pdfUrl) { %>
                     <a href="<%= mod.pdfUrl %>" target="_blank" class="btn btn-sm btn-outline-danger py-0 px-2">
                       <i class="bi bi-file-earmark-pdf"></i> PDF
                     </a>

@@ -14,11 +14,9 @@
     <i class="bi bi-shield-lock-fill text-warning me-2"></i>FocusLearn Admin
   </a>
   <div>
-    <a href="/admin/subjects" class="btn btn-light btn-sm me-2 fw-semibold">Courses</a>
-    <a href="/admin/modules" class="btn btn-outline-light btn-sm me-2">Topics</a>
-    <a href="/admin/quizzes" class="btn btn-outline-light btn-sm me-2">Quizzes</a>
-    <a href="/admin/materials" class="btn btn-outline-light btn-sm me-2">Materials</a>
-    <a href="/admin" class="btn btn-outline-light btn-sm">Dashboard</a>
+    <a href="/admin" class="btn btn-outline-light btn-sm">
+      <i class="bi bi-arrow-left me-1"></i> Back
+    </a>
   </div>
 </nav>
 
@@ -100,12 +98,68 @@
   </div>
 
   <div class="card shadow-sm border-0 p-4">
-    <h5 class="fw-bold mb-3">
-      <i class="bi bi-list-check me-2 text-secondary"></i>Existing Courses (<%= courses.length %>)
-    </h5>
+    <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+      <div>
+        <h5 class="fw-bold mb-0">
+          <i class="bi bi-list-check me-2 text-secondary"></i>Existing Courses (<span id="courses-count"><%= courses.length %></span>)
+        </h5>
+        <div class="small text-muted" id="filter-status-text">
+          <% if (typeof selectedCourseId !== 'undefined' && selectedCourseId) { %>
+            Filtered by selected course
+          <% } else if (typeof searchQuery !== 'undefined' && searchQuery) { %>
+            Filtered by search: "<%= searchQuery %>"
+          <% } else { %>
+            Showing all active curriculum courses
+          <% } %>
+        </div>
+      </div>
+
+      <!-- Quick Action to Materials -->
+      <a href="/admin/materials" class="btn btn-sm btn-outline-info">
+        <i class="bi bi-file-earmark-slides me-1"></i> Add PPT / PDF / Video Materials &rarr;
+      </a>
+    </div>
+
+    <!-- Course Filter Bar (Search & Category only) -->
+    <div class="card bg-white border p-3 mb-3 shadow-none">
+      <form method="GET" action="/admin/subjects" id="course-filter-form" class="row g-2 align-items-end">
+
+        <div class="col-md-6">
+          <label class="form-label small fw-semibold text-muted mb-1">
+            <i class="bi bi-search me-1"></i> Search Course:
+          </label>
+          <input type="text" name="search" id="course-search-input" class="form-control form-control-sm"
+                 placeholder="Search by code, title, or keywords..."
+                 value="<%= typeof searchQuery !== 'undefined' ? searchQuery : '' %>">
+        </div>
+
+        <div class="col-md-4">
+          <label class="form-label small fw-semibold text-muted mb-1">Category:</label>
+          <select name="category" id="category-select-filter" class="form-select form-select-sm">
+            <option value="">All Categories</option>
+            <% if (typeof categories !== 'undefined' && categories.length) { %>
+              <% categories.forEach(cat => { %>
+                <option value="<%= cat %>" <%= (typeof selectedCategory !== 'undefined' && selectedCategory === cat) ? 'selected' : '' %>>
+                  <%= cat %>
+                </option>
+              <% }) %>
+            <% } %>
+          </select>
+        </div>
+
+        <div class="col-md-2 d-flex gap-1">
+          <button type="submit" class="btn btn-primary btn-sm flex-grow-1">
+            <i class="bi bi-filter"></i> Apply
+          </button>
+          <a href="/admin/subjects" id="btn-reset-filter" class="btn btn-outline-secondary btn-sm" title="Clear Filters">
+            Reset
+          </a>
+        </div>
+      </form>
+    </div>
 
     <div class="table-responsive">
-      <table class="table table-hover table-bordered align-middle">
+      <table class="table table-hover table-bordered align-middle" id="courses-table">
         <thead class="table-dark">
           <tr>
             <th style="width: 100px;">Code</th>
@@ -116,9 +170,14 @@
           </tr>
         </thead>
 
-        <tbody>
+        <tbody id="courses-table-body">
           <% courses.forEach(course => { %>
-            <tr>
+            <tr class="course-row"
+                data-course-id="<%= course._id %>"
+                data-code="<%= course.code.toLowerCase() %>"
+                data-title="<%= course.title.toLowerCase() %>"
+                data-category="<%= (course.category || '').toLowerCase() %>"
+                data-desc="<%= course.description.toLowerCase() %>">
               <td><span class="badge bg-primary fs-6"><%= course.code %></span></td>
               <td>
                 <div class="fw-bold"><%= course.title %></div>
@@ -146,9 +205,17 @@
             </tr>
           <% }) %>
 
-          <% if (courses.length === 0) { %>
-            <tr><td colspan="5" class="text-center py-4 text-muted">No courses found. Add your first course above!</td></tr>
-          <% } %>
+          <!-- Dynamic Empty State Row for when no courses match filter -->
+          <tr id="empty-filter-row" class="<%= (courses.length === 0) ? '' : 'd-none' %>">
+            <td colspan="5" class="text-center py-4 text-muted">
+              <i class="bi bi-search fs-3 text-secondary d-block mb-2"></i>
+              <strong>No courses found matching your filter selection.</strong>
+              <div class="small mt-1">Try selecting "All Courses" or clearing your search keywords.</div>
+              <a href="/admin/subjects" class="btn btn-sm btn-outline-primary mt-2">
+                <i class="bi bi-arrow-counterclockwise me-1"></i> Reset Course Filter
+              </a>
+            </td>
+          </tr>
         </tbody>
       </table>
     </div>
@@ -156,5 +223,61 @@
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+  // Client-Side Dynamic Instant Filter without page reload
+  document.addEventListener('DOMContentLoaded', () => {
+    const searchInput = document.getElementById('course-search-input');
+    const categorySelect = document.getElementById('category-select-filter');
+    const rows = document.querySelectorAll('.course-row');
+    const emptyRow = document.getElementById('empty-filter-row');
+    const countSpan = document.getElementById('courses-count');
+    const statusText = document.getElementById('filter-status-text');
+
+    function applyFilters() {
+      const query = searchInput ? searchInput.value.trim().toLowerCase() : '';
+      const selectedCat = categorySelect ? categorySelect.value.trim().toLowerCase() : '';
+
+      let visibleCount = 0;
+
+      rows.forEach(row => {
+        const rowCode = row.dataset.code || '';
+        const rowTitle = row.dataset.title || '';
+        const rowDesc = row.dataset.desc || '';
+        const rowCat = row.dataset.category || '';
+
+        const matchesCategory = !selectedCat || rowCat === selectedCat;
+        const matchesQuery = !query || rowCode.includes(query) || rowTitle.includes(query) || rowDesc.includes(query);
+
+        if (matchesCategory && matchesQuery) {
+          row.classList.remove('d-none');
+          visibleCount++;
+        } else {
+          row.classList.add('d-none');
+        }
+      });
+
+      if (countSpan) countSpan.textContent = visibleCount;
+
+      if (emptyRow) {
+        if (visibleCount === 0) {
+          emptyRow.classList.remove('d-none');
+        } else {
+          emptyRow.classList.add('d-none');
+        }
+      }
+
+      if (statusText) {
+        if (query || selectedCat) {
+          statusText.textContent = `Filtered view: showing ${visibleCount} of ${rows.length} courses`;
+        } else {
+          statusText.textContent = `Showing all ${rows.length} active curriculum courses`;
+        }
+      }
+    }
+
+    if (searchInput) searchInput.addEventListener('input', applyFilters);
+    if (categorySelect) categorySelect.addEventListener('change', applyFilters);
+  });
+</script>
 </body>
 </html>

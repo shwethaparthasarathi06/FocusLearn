@@ -72,6 +72,17 @@ const quizAttemptSchema = new mongoose.Schema(
       type: Number,
       default: 1
     },
+    quizType: {
+      type: String,
+      enum: ['regular', 'redo'],
+      default: 'regular',
+      index: true
+    },
+    isRedoAttempt: {
+      type: Boolean,
+      default: false,
+      index: true
+    },
     answers: [answerRecordSchema],
     score: {
       type: Number,

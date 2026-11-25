@@ -8,6 +8,13 @@
         <!-- Quiz Header -->
         <div class="quiz-header">
             <div>
+                <% if (typeof isRedo !== 'undefined' && isRedo) { %>
+                    <div class="mb-2">
+                        <span class="badge text-white px-3 py-1 fs-6 shadow-sm" style="background-color: #7c3aed;">
+                            <i class="bi bi-arrow-repeat me-1"></i> Course Redo Assessment (Alternate Quiz)
+                        </span>
+                    </div>
+                <% } %>
                 <span class="badge quiz-badge-code">
                     <%= course.code %> &bull; Module <%= moduleDoc.moduleNumber %>
                 </span>
@@ -26,7 +33,9 @@
         </div>
 
         <!-- Quiz Form -->
-        <form id="quiz-form" action="/quizzes/<%= moduleDoc._id %>/submit" method="POST">
+        <form id="quiz-form" action="/quizzes/<%= moduleDoc._id %>/submit<%= (typeof isRedo !== 'undefined' && isRedo) ? '?type=redo' : '' %>" method="POST">
+            <input type="hidden" name="quizType" value="<%= (typeof isRedo !== 'undefined' && isRedo) ? 'redo' : 'regular' %>">
+            <input type="hidden" name="isRedo" value="<%= (typeof isRedo !== 'undefined' && isRedo) ? 'true' : 'false' %>">
             <% quiz.questions.forEach(function(q, qIndex) { %>
                 <div class="quiz-question-card" id="q-card-<%= qIndex %>">
                     <div class="quiz-q-header">
@@ -135,7 +144,5 @@ document.addEventListener('DOMContentLoaded', () => {
     updateProgress();
 });
 </script>
-
-<%- include('../partials/materials-list.html') %>
 
 <%- include('../partials/footer.html') %>
